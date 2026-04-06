@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counselign Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f5f7fa;
+        }
+
+        .header {
+            background: #003d82;
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .settings-icon {
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .user-section {
+            background: white;
+            margin: 20px 40px;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            background: #003d82;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        .user-details h2 {
+            color: #003d82;
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .user-details p {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 20px;
+        }
+
+        .icon-btn {
+            position: relative;
+            cursor: pointer;
+            font-size: 24px;
+            color: #003d82;
+        }
+
+        .badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px 40px;
+        }
+
+        /* Carousel Section */
+        .carousel-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .carousel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .carousel-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #003d82;
+        }
+
+        .view-all {
+            color: #003d82;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .view-all:hover {
+            text-decoration: underline;
+        }
+
+        .carousel-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .carousel-track {
+            display: flex;
+            transition: transform 0.4s ease;
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            background: linear-gradient(135deg, #003d82 0%, #0056b3 100%);
+            border-radius: 12px;
+            padding: 28px;
+            color: white;
+        }
+
+        .event-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.25);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+        }
+
+        .event-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+
+        .event-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .event-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .event-description {
+            font-size: 14px;
+            line-height: 1.6;
+            opacity: 0.95;
+            margin-bottom: 20px;
+        }
+
+        .event-button {
+            background: white;
+            color: #003d82;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .event-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .carousel-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .carousel-btn {
+            background: #003d82;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .carousel-btn:hover {
+            background: #002a5c;
+            transform: scale(1.05);
+        }
+
+        .carousel-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d1d5db;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            background: #003d82;
+            width: 28px;
+            border-radius: 4px;
+        }
+
+        /* Welcome Section with Quotes */
+        .welcome-section {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 12px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wave-decoration {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(to bottom, transparent, rgba(144, 164, 174, 0.2));
+        }
+
+        .welcome-title {
+            text-align: center;
+            color: #003d82;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .welcome-title::after {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 4px;
+            background: #003d82;
+            margin: 12px auto 0;
+            border-radius: 2px;
+        }
+
+        .main-message {
+            background: white;
+            padding: 28px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            position: relative;
+        }
+
+        .quote-marks {
+            font-size: 48px;
+            color: #003d82;
+            opacity: 0.15;
+            position: absolute;
+            font-family: Georgia, serif;
+        }
+
+        .quote-marks.open {
+            top: 10px;
+            left: 15px;
+        }
+
+        .quote-marks.close {
+            bottom: 10px;
+            right: 15px;
+        }
+
+        .main-message p {
+            font-style: italic;
+            color: #003d82;
+            font-size: 16px;
+            line-height: 1.7;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .quotes-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            position: relative;
+            min-height: 200px;
+        }
+
+        .quote-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            border-left: 4px solid;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            position: relative;
+            overflow: hidden;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .quote-card.hidden {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .quote-card:nth-child(1) {
+            border-left-color: #4caf50;
+        }
+
+        .quote-card:nth-child(2) {
+            border-left-color: #ff9800;
+        }
+
+        .quote-card:nth-child(3) {
+            border-left-color: #e91e63;
+        }
+
+        .quote-card::before {
+            content: '✦';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 60px;
+            opacity: 0.05;
+            transform: rotate(15deg);
+        }
+
+        .quote-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .quote-card:nth-child(1) .quote-icon {
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .quote-card:nth-child(2) .quote-icon {
+            background: rgba(255, 152, 0, 0.1);
+        }
+
+        .quote-card:nth-child(3) .quote-icon {
+            background: rgba(233, 30, 99, 0.1);
+        }
+
+        .quote-text {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .quote-author {
+            color: #666;
+            font-size: 12px;
+            font-style: italic;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-section">
+            <div class="logo"></div>
+            <span>Counselign</span>
+        </div>
+        <div class="settings-icon">⚙</div>
+    </div>
+
+    <!-- User Section -->
+    <div class="user-section">
+        <div class="user-info">
+            <div class="user-avatar">👤</div>
+            <div class="user-details">
+                <h2>Hello! Princess Grace Marie Sitoy</h2>
+                <p>Last login: 2025-11-12 13:58:17</p>
+            </div>
+        </div>
+        <div class="user-actions">
+            <div class="icon-btn">💬</div>
+            <div class="icon-btn">
+                🔔
+                <span class="badge">2</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Carousel Section -->
+        <div class="carousel-section">
+            <div class="carousel-header">
+                <h2 class="carousel-title">Upcoming Events</h2>
+                <a href="#" class="view-all">View All →</a>
+            </div>
+
+            <div class="carousel-wrapper">
+                <div class="carousel-track" id="track">
+                    <!-- Event 1 -->
+                    <div class="carousel-slide">
+                        <span class="event-badge">Workshop</span>
+                        <h3 class="event-title">Stress Management & Mindfulness</h3>
+                        <div class="event-meta">
+                            <div class="event-meta-item">📅 Wednesday, Nov 15, 2025</div>
+                            <div class="event-meta-item">🕐 2:00 PM - 3:30 PM</div>
+                            <div class="event-meta-item">📍 Counseling Center, Room 201</div>
+                        </div>
+                        <p class="event-description">
+                            Learn practical techniques to manage stress and incorporate mindfulness into your daily
+                            routine.
+                        </p>
+                        <button class="event-button">Register Now</button>
+                    </div>
+
+                    <!-- Event 2 -->
+                    <div class="carousel-slide">
+                        <span class="event-badge">Support Group</span>
+                        <h3 class="event-title">Anxiety Support Circle</h3>
+                        <div class="event-meta">
+                            <div class="event-meta-item">📅 Friday, Nov 17, 2025</div>
+                            <div class="event-meta-item">🕐 4:00 PM - 5:00 PM</div>
+                            <div class="event-meta-item">📍 Virtual via Zoom</div>
+                        </div>
+                        <p class="event-description">
+                            A safe space to share experiences and connect with others navigating anxiety challenges.
+                        </p>
+                        <button class="event-button">Join Group</button>
+                    </div>
+
+                    <!-- Event 3 -->
+                    <div class="carousel-slide">
+                        <span class="event-badge">Seminar</span>
+                        <h3 class="event-title">Building Healthy Relationships</h3>
+                        <div class="event-meta">
+                            <div class="event-meta-item">📅 Tuesday, Nov 21, 2025</div>
+                            <div class="event-meta-item">🕐 3:00 PM - 4:30 PM</div>
+                            <div class="event-meta-item">📍 Student Center Auditorium</div>
+                        </div>
+                        <p class="event-description">
+                            Explore communication skills and boundaries for healthier personal connections.
+                        </p>
+                        <button class="event-button">Learn More</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carousel-controls">
+                <button class="carousel-btn" id="prevBtn">‹</button>
+                <div class="carousel-dots" id="dots">
+                    <span class="dot active" data-slide="0"></span>
+                    <span class="dot" data-slide="1"></span>
+                    <span class="dot" data-slide="2"></span>
+                </div>
+                <button class="carousel-btn" id="nextBtn">›</button>
+            </div>
+        </div>
+
+        <!-- Welcome Section with Quotes -->
+        <div class="welcome-section">
+            <h1 class="welcome-title">Welcome to Your Safe Space</h1>
+
+            <div class="main-message">
+                <span class="quote-marks open">"</span>
+                <p>
+                    At our University Guidance Counseling, we understand that opening up can be challenging. However, we
+                    want to assure you that you are not alone. We are here to listen and support you without judgment.
+                </p>
+                <span class="quote-marks close">"</span>
+            </div>
+
+            <div class="quotes-container">
+                <div class="quote-card">
+                    <div class="quote-icon">🌱</div>
+                    <p class="quote-text"></p>
+                    <p class="quote-author"></p>
+                </div>
+
+                <div class="quote-card">
+                    <div class="quote-icon">💪</div>
+                    <p class="quote-text"></p>
+                    <p class="quote-author"></p>
+                </div>
+
+                <div class="quote-card">
+                    <div class="quote-icon">🌟</div>
+                    <p class="quote-text"></p>
+                    <p class="quote-author"></p>
+                </div>
+            </div>
+
+            <div class="wave-decoration"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const track = document.getElementById('track');
+        const dots = document.querySelectorAll('.dot');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const totalSlides = 3;
+
+        function updateCarousel() {
+            track.style.transform = `translateX(-${currentSlide * 100}%)`;
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            updateCarousel();
+        }
+
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+            updateCarousel();
+        }
+
+        nextBtn.addEventListener('click', nextSlide);
+        prevBtn.addEventListener('click', prevSlide);
+
+        dots.forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                currentSlide = parseInt(e.target.dataset.slide);
+                updateCarousel();
+            });
+        });
+
+        // Auto-advance every 6 seconds
+        setInterval(nextSlide, 6000);
+
+        // Quotes rotation system
+        const quotesData = [
+            [
+                // Card 1 quotes (Growth theme)
+                {
+                    text: "Growth begins at the end of your comfort zone. Every step you take towards healing is a step towards becoming the person you're meant to be.",
+                    author: "— Daily Inspiration",
+                    icon: "🌱"
+                },
+                {
+                    text: "Be patient with yourself. Growth is not linear, and every small step forward is worth celebrating.",
+                    author: "— Wellness Guide",
+                    icon: "🌱"
+                },
+                {
+                    text: "Your journey of self-discovery is uniquely yours. Embrace the process and trust in your ability to grow.",
+                    author: "— Mindful Growth",
+                    icon: "🌱"
+                },
+                {
+                    text: "Change takes time, but every moment you invest in yourself brings you closer to the person you want to become.",
+                    author: "— Personal Development",
+                    icon: "🌱"
+                }
+            ],
+            [
+                // Card 2 quotes (Strength theme)
+                {
+                    text: "You are stronger than you think. The fact that you're here, seeking support, shows tremendous courage and self-awareness.",
+                    author: "— Counseling Wisdom",
+                    icon: "💪"
+                },
+                {
+                    text: "Asking for help is not a sign of weakness—it's a powerful act of self-care and strength.",
+                    author: "— Mental Health Matters",
+                    icon: "💪"
+                },
+                {
+                    text: "Your resilience has carried you this far. Trust that it will continue to guide you through whatever comes next.",
+                    author: "— Inner Strength",
+                    icon: "💪"
+                },
+                {
+                    text: "Sometimes the bravest thing you can do is simply show up and be honest about how you're feeling.",
+                    author: "— Courage Corner",
+                    icon: "💪"
+                }
+            ],
+            [
+                // Card 3 quotes (Journey theme)
+                {
+                    text: "Your mental health journey is unique to you. There's no rush, no comparison. Take it one day at a time, and celebrate every small victory.",
+                    author: "— Mindful Living",
+                    icon: "🌟"
+                },
+                {
+                    text: "Healing is not a destination but a journey. Honor where you are right now, even as you work towards where you want to be.",
+                    author: "— Wellness Path",
+                    icon: "🌟"
+                },
+                {
+                    text: "You don't have to have everything figured out. Progress, not perfection, is what truly matters.",
+                    author: "— Journey Together",
+                    icon: "🌟"
+                },
+                {
+                    text: "Every day you choose to prioritize your wellbeing is a day worth celebrating, no matter how small the step may seem.",
+                    author: "— Daily Wellness",
+                    icon: "🌟"
+                }
+            ]
+        ];
+
+        const quoteCards = document.querySelectorAll('.quote-card');
+        const quoteIndices = [0, 0, 0]; // Current quote index for each card
+
+        function updateQuote(cardIndex) {
+            const card = quoteCards[cardIndex];
+            const quotes = quotesData[cardIndex];
+            const currentQuoteIndex = quoteIndices[cardIndex];
+
+            // Fade out
+            card.classList.add('hidden');
+
+            setTimeout(() => {
+                // Update content
+                const quote = quotes[currentQuoteIndex];
+                card.querySelector('.quote-text').textContent = quote.text;
+                card.querySelector('.quote-author').textContent = quote.author;
+                card.querySelector('.quote-icon').textContent = quote.icon;
+
+                // Move to next quote
+                quoteIndices[cardIndex] = (currentQuoteIndex + 1) % quotes.length;
+
+                // Fade in
+                setTimeout(() => {
+                    card.classList.remove('hidden');
+                }, 50);
+            }, 500);
+        }
+
+        // Initialize with first quotes
+        quoteCards.forEach((card, index) => {
+            updateQuote(index);
+        });
+
+        // Rotate quotes every 5 seconds with staggered timing
+        setInterval(() => updateQuote(0), 5000);
+        setTimeout(() => {
+            setInterval(() => updateQuote(1), 5000);
+        }, 1666);
+        setTimeout(() => {
+            setInterval(() => updateQuote(2), 5000);
+        }, 3333);
+    </script>
+</body>
+
+</html>

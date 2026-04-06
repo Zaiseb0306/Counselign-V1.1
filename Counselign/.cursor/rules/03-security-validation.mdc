@@ -1,0 +1,28 @@
+---
+alwaysApply: true
+---
+# Security, Validation, and Logging Guardrails (Flutter)
+
+Authentication & Authorization
+- Do not expose privileged screens without verifying auth state (e.g., tokens in secure storage).
+- Gate routes with guards or conditional navigation; enforce roles in the backend and hide admin UI in the client.
+
+Input Handling
+- Validate user inputs with form validators; surface concise, user-friendly error messages.
+- Sanitize/normalize inputs in view models before API calls (trim, length checks, formats).
+- Use Flutter form widgets with `autovalidateMode` where appropriate; avoid side effects during validation.
+
+Transport & Headers
+- Use HTTPS-only backends; configure base URL and timeouts in `lib/api/config.dart`.
+- Attach auth tokens using interceptors/middleware; refresh tokens gracefully when supported.
+- Respect CORS on web builds; do not hardcode credentials in client builds.
+
+Error Handling & Logs
+- Never show raw stack traces to users; present friendly error UIs/snackbars.
+- Centralize error mapping (network, parsing, timeout) in API layer and view models.
+- Use structured logging during development; remove verbose logs in release builds.
+
+Data Privacy
+- Store secrets/tokens in platform-secure storage where possible.
+- Minimize personally identifiable information persisted on-device; prefer in-memory when feasible.
+- Only request permissions when needed and explain rationale in UI.

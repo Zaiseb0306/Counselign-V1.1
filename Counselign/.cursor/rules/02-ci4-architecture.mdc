@@ -1,0 +1,21 @@
+---
+alwaysApply: true
+---
+# CodeIgniter 4 Architecture & Boundaries
+
+- App entrypoint: [public/](mdc:public/)
+- Routes: [app/Config/Routes.php](mdc:app/Config/Routes.php)
+- Controllers: [app/Controllers](mdc:app/Controllers)
+- Models: [app/Models](mdc:app/Models)
+- Views: [app/Views](mdc:app/Views)
+- Config: [app/Config](mdc:app/Config)
+
+Guidelines
+- Keep controllers thin: orchestrate requests, delegate to models/services, and return views/JSON.
+- Put all DB access in models; avoid raw queries in controllers/views.
+- Use CI4 Validation and Filters for input processing and auth/CSRF.
+- Use session/flash for feedback; avoid echoing server errors to views.
+- Log server-side errors via CI4 Logger.
+
+When adding or modifying endpoints
+- Document endpoints and flows in [memory-bank/systemPatterns.md](mdc:memory-bank/systemPatterns.md) and [memory-bank/activeContext.md](mdc:memory-bank/activeContext.md).

@@ -1,0 +1,21 @@
+---
+alwaysApply: true
+---
+# Memory Bank is Authoritative
+
+- Always read Memory Bank files before starting any task:
+  - [memory-bank/projectbrief.md](mdc:memory-bank/projectbrief.md)
+  - [memory-bank/productContext.md](mdc:memory-bank/productContext.md)
+  - [memory-bank/activeContext.md](mdc:memory-bank/activeContext.md)
+  - [memory-bank/systemPatterns.md](mdc:memory-bank/systemPatterns.md)
+  - [memory-bank/techContext.md](mdc:memory-bank/techContext.md)
+  - [memory-bank/progress.md](mdc:memory-bank/progress.md)
+
+- After meaningful changes:
+  - Update `activeContext.md` with current focus, recent changes, next steps
+  - Reflect new/changed endpoints in `systemPatterns.md`
+  - Capture tech/config/schema changes in `techContext.md`
+  - Record status updates and known issues in `progress.md`
+
+- Prefer clear, verbose naming in code edits; avoid cryptic abbreviations.
+- Keep edits small and incremental with clear commit messages.

@@ -1,0 +1,17 @@
+# Project Intelligence (.cursorrules)
+
+## Patterns
+- Use `AppRoutes` for navigation and centralized route definitions.
+- Keep API base URL logic in `ApiConfig`; avoid scattering base URLs.
+- Prefer `provider` for shared state; use `shared_preferences` only for simple persistence.
+
+## Preferences
+- Consistent theming via `ThemeData` and seed color; font `Roboto`.
+- Use fade transitions for service/dashboard navigations.
+
+## Workflows
+- When adding features, create `state/`, `models/`, `widgets/` subfolders per module.
+- Document any new endpoints and request/response models in Memory Bank.
+
+## TODO Capture
+- After significant feature merges, update `activeContext.md` and `progress.md`.

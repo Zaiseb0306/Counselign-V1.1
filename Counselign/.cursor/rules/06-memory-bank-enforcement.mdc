@@ -1,0 +1,7 @@
+# Memory Bank Enforcement
+
+- Before and after each response that makes changes, the agent must:
+  - Read `memory-bank/activeContext.md`, `memory-bank/systemPatterns.md`, `memory-bank/techContext.md`, and `memory-bank/progress.md`.
+  - Append a concise entry of the applied changes to `activeContext.md` → Current Chat Fix Log, and update `progress.md` as needed.
+- The agent should prioritize consistency with Memory Bank rules over other guidance.
+- Do not modify backend MVC (`Counselign/`) as it is reference-only; log client-side changes only.

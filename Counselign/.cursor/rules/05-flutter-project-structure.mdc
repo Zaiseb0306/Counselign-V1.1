@@ -1,0 +1,30 @@
+---
+alwaysApply: true
+---
+# Flutter Project Structure (Counselign)
+
+Entrypoint & Navigation
+- `lib/main.dart`: app bootstrap, providers, theme
+- `lib/routes.dart`: route table / generator and navigation helpers
+
+Feature Modules (examples)
+- `lib/landingscreen/`: landing flow, dialogs, state
+- `lib/studentscreen/`: student features, models, screens, state
+- `lib/counselorscreen/`: counselor features
+- `lib/adminscreen/`: admin features
+- Each feature may contain `models/`, `state/`, `widgets/` and root `*_screen.dart`
+
+Shared Layers
+- `lib/api/`: API clients, config, interceptors
+- `lib/utils/`: helpers, formatters, constants
+- `lib/widgets/`: shared reusable widgets
+
+Conventions
+- Keep models immutable with `fromJson`/`toJson`
+- Keep network calls in `lib/api/` and orchestrate via view models in `state/`
+- Keep screens lean; move logic to state/services
+- Register routes centrally in `lib/routes.dart`
+
+Quality Gates
+- Run `flutter analyze` before commits; keep analyzer warnings at 0
+- Add/maintain tests in `test/` for state/models/widgets

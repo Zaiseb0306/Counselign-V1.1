@@ -1,0 +1,19 @@
+---
+alwaysApply: true
+---
+# Documentation Workflows
+
+On each feature/change:
+- Update [memory-bank/activeContext.md](mdc:memory-bank/activeContext.md): current focus, recent changes, next steps.
+- Update [memory-bank/systemPatterns.md](mdc:memory-bank/systemPatterns.md): navigation routes, feature modules, state flows.
+- Update [memory-bank/techContext.md](mdc:memory-bank/techContext.md): configs, dependencies, schema.
+- Update [memory-bank/progress.md](mdc:memory-bank/progress.md): done, pending, known issues.
+
+Testing & Verification:
+- Run Flutter tests: `flutter test` for unit/widget tests in `test/`.
+- Run integration tests if present: `flutter test integration_test`.
+- Use `flutter analyze` to enforce lints; keep analyzer clean.
+
+Commit Style:
+- Small, incremental edits with clear messages describing intent and impact.
+- Reference updated Memory Bank files in commit body when applicable.

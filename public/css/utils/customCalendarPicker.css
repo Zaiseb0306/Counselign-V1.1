@@ -1,0 +1,389 @@
+/**
+ * Custom Calendar Picker Styles
+ * 
+ * Styles for the reusable calendar popup component.
+ * Matches the design from student_announcements.php calendar.
+ */
+
+/* Input wrapper to contain input + button */
+.custom-calendar-input-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+/* Calendar button next to input */
+.custom-calendar-btn {
+    position: absolute;
+    right: 1px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, #060E57, #0a1875);
+    color: #ffffff;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    z-index: 2;
+    height: calc(100% - 2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(6, 14, 87, 0.2);
+}
+
+.custom-calendar-btn:hover {
+    background: linear-gradient(135deg, #0a1875, #060E57);
+    box-shadow: 0 4px 12px rgba(6, 14, 87, 0.3);
+    transform: translateY(-50%) !important;
+}
+
+.custom-calendar-btn:active {
+    background: linear-gradient(135deg, #060E57, #0a1875);
+    box-shadow: 0 2px 8px rgba(6, 14, 87, 0.2);
+    transform: translateY(-50%) !important;
+}
+
+.custom-calendar-btn i {
+    font-size: 18px;
+    display: inline-block !important;
+    color: #ffffff !important;
+    line-height: 1;
+}
+
+/* Ensure calendar icon is visible */
+.custom-calendar-btn i.fa-calendar-alt::before,
+.custom-calendar-btn i.fa-calendar::before {
+    content: "\f073";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    color: #ffffff !important;
+    display: inline-block;
+}
+
+/* Adjust input padding to accommodate button */
+.custom-calendar-input-wrapper input[type="date"] {
+    padding-right: 45px;
+    width: 100%;
+}
+
+/* Hide native date picker icon */
+.custom-calendar-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+}
+
+.custom-calendar-input-wrapper input[type="date"]::-webkit-inner-spin-button,
+.custom-calendar-input-wrapper input[type="date"]::-webkit-clear-button {
+    display: none;
+    -webkit-appearance: none;
+}
+
+/* Popup container */
+.custom-calendar-popup {
+    position: absolute;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    z-index: 9999;
+    width: 320px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(6, 14, 87, 0.12);
+}
+
+.custom-calendar-popup.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Calendar header */
+.custom-calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid rgba(6, 14, 87, 0.12);
+}
+
+.custom-calendar-nav-btn {
+    background: linear-gradient(135deg, #060E57, #0a1875);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(6, 14, 87, 0.15);
+    flex-shrink: 0;
+}
+
+.custom-calendar-nav-btn i {
+    display: inline-block !important;
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1;
+    color: #ffffff !important;
+    font-style: normal;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure FontAwesome icons are visible */
+.custom-calendar-nav-btn i.fa-chevron-left::before {
+    content: "\f053";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    color: #ffffff !important;
+    display: inline-block;
+}
+
+.custom-calendar-nav-btn i.fa-chevron-right::before {
+    content: "\f054";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    color: #ffffff !important;
+    display: inline-block;
+}
+
+.custom-calendar-nav-btn:hover {
+    background: linear-gradient(135deg, #0a1875, #060E57);
+    box-shadow: 0 4px 12px rgba(6, 14, 87, 0.25);
+}
+
+.custom-calendar-nav-btn:active {
+    background: linear-gradient(135deg, #060E57, #0a1875);
+    box-shadow: 0 2px 8px rgba(6, 14, 87, 0.15);
+}
+
+.custom-calendar-month {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #060E57;
+    text-align: center;
+    flex: 1;
+    letter-spacing: 0.5px;
+}
+
+/* Calendar grid */
+.custom-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+/* Day headers */
+.custom-calendar-day-header {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #060E57;
+    padding: 8px 0;
+    background: linear-gradient(135deg, rgba(6, 14, 87, 0.08), rgba(10, 24, 117, 0.06));
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Calendar day cells */
+.custom-calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    border: 1.5px solid rgba(6, 14, 87, 0.12);
+    padding: 4px;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.custom-calendar-day .date-number {
+    font-weight: 700;
+    color: #0f1c6b;
+}
+
+/* Hover state for available dates */
+.custom-calendar-day.available:hover {
+    background: linear-gradient(135deg, #e6f3ff 0%, #d4e9ff 100%);
+    transform: scale(1.1);
+    border-color: #0a1875;
+    box-shadow: 0 3px 8px rgba(10, 24, 117, 0.2);
+    z-index: 10;
+}
+
+/* Other month (empty cells) */
+.custom-calendar-day.other-month {
+    color: #bbb;
+    background: #f8f9fa;
+    border-color: rgba(6, 14, 87, 0.06);
+    cursor: default;
+}
+
+/* Today highlight */
+.custom-calendar-day.today {
+    background: linear-gradient(135deg, #060E57 0%, #0a1875 100%);
+    color: white;
+    border-color: #060E57;
+    box-shadow: 0 4px 12px rgba(6, 14, 87, 0.3);
+    font-weight: 700;
+}
+
+.custom-calendar-day.today .date-number {
+    color: white;
+}
+
+/* Selected date */
+.custom-calendar-day.selected {
+    background: linear-gradient(135deg, #0a1875 0%, #1e3799 100%);
+    color: white;
+    border-color: #1e3799;
+    box-shadow: 0 3px 10px rgba(10, 24, 117, 0.3);
+}
+
+.custom-calendar-day.selected .date-number {
+    color: white;
+}
+
+/* Disabled dates */
+.custom-calendar-day.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background: #f0f0f0;
+    color: #999;
+    border-color: #e0e0e0;
+}
+
+.custom-calendar-day.disabled .date-number {
+    color: #999;
+}
+
+.custom-calendar-day.disabled:hover {
+    transform: none;
+    background: #f0f0f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Past dates */
+.custom-calendar-day.past-date {
+    background: #f8f8f8;
+    color: #ccc;
+}
+
+/* No counselors available */
+.custom-calendar-day.no-counselors {
+    background: #fff5f5;
+    border-color: #ffcccc;
+}
+
+/* Fully booked dates */
+.custom-calendar-day.fully-booked {
+    background: #fde2e1;
+    border-color: #f8b4b4;
+    color: #b91c1c;
+}
+
+.custom-calendar-day.fully-booked .date-number {
+    color: #b91c1c;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .custom-calendar-popup {
+        width: 280px;
+        padding: 15px;
+    }
+
+    .custom-calendar-header {
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+    }
+
+    .custom-calendar-nav-btn {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .custom-calendar-nav-btn i {
+        font-size: 14px;
+    }
+
+    .custom-calendar-month {
+        font-size: 16px;
+    }
+
+    .custom-calendar-day-header {
+        font-size: 10px;
+        padding: 6px 0;
+    }
+
+    .custom-calendar-grid {
+        gap: 4px;
+    }
+
+    .custom-calendar-day {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .custom-calendar-popup {
+        width: 260px;
+        padding: 12px;
+    }
+
+    .custom-calendar-nav-btn {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .custom-calendar-nav-btn i {
+        font-size: 12px;
+    }
+
+    .custom-calendar-month {
+        font-size: 15px;
+    }
+
+    .custom-calendar-day-header {
+        font-size: 9px;
+        padding: 4px 0;
+    }
+
+    .custom-calendar-grid {
+        gap: 3px;
+    }
+
+    .custom-calendar-day {
+        font-size: 11px;
+        padding: 2px;
+    }
+    
+    .custom-calendar-btn {
+        padding: 6px 10px;
+    }
+
+    .custom-calendar-btn i {
+        font-size: 16px;
+    }
+}

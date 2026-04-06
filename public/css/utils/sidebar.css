@@ -1,0 +1,1040 @@
+/* ===================================
+   Sidebar Dashboard Layout Styles
+   =================================== */
+
+   * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #f7f7f7;
+    font-family: Arial, Helvetica, sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 245px;
+    background: linear-gradient(180deg, #060E57 0%, #0a1875 100%);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+    transition: width 0.3s ease, transform 0.3s ease;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.sidebar.collapsed {
+    width: 72px;
+}
+
+.sidebar-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 12px 0;
+}
+
+/* Logo/Toggle Button */
+.sidebar-toggle-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    margin: 0 8px 16px 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    width: calc(100% - 16px);
+}
+
+.sidebar.collapsed .sidebar-toggle-btn {
+    justify-content: center;
+    padding: 12px;
+    gap: 0;
+}
+
+.sidebar-toggle-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.sidebar-brand-text {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.3s ease, width 0.3s ease;
+}
+
+.sidebar.collapsed .sidebar-brand-text {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+}
+
+/* Sidebar Navigation */
+.sidebar-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: #ffffff;
+    transition: all 0.3s ease;
+    position: relative;
+    white-space: nowrap;
+}
+
+.sidebar-link i {
+    font-size: 20px;
+    min-width: 24px;
+    color: rgba(255, 255, 255, 0.8);
+    transition: color 0.3s ease;
+}
+
+.sidebar-text {
+    margin-left: 12px;
+    font-weight: 500;
+    font-size: 15px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar.collapsed .sidebar-text {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+}
+
+.sidebar-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-link:hover i {
+    color: #ffffff;
+}
+
+.sidebar-link.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.sidebar-link.active i {
+    color: #ffffff;
+}
+
+/* Sidebar Overlay (Mobile) */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Main Wrapper */
+.main-wrapper {
+    margin-left: 240px;
+    transition: margin-left 0.3s ease;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar.collapsed ~ .main-wrapper {
+    margin-left: 72px;
+}
+
+/* Top Bar */
+.top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 998;
+    background-color: transparent;
+    box-shadow: none;
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 64px;
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+.top-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+}
+
+/* Page Title Header in Top Bar */
+.page-title-header {
+    background: linear-gradient(135deg, #060E57, #4169E1);
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    padding: 8px 20px;
+    box-shadow: 2px 2px 12px rgba(6, 14, 87, 0.2);
+    margin-left: -24px; /* Extends to touch the sidebar */
+    position: relative;
+    clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 50%, calc(100% - 15px) 100%, 0 100%);
+}
+
+.page-title-header i {
+    color: #ffffff;
+    margin-right: 0.5rem;
+}
+
+.mobile-sidebar-toggle {
+    display: none;
+}
+
+.page-title {
+    display: none;
+}
+
+.top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Top Bar Buttons */
+.top-bar-btn {
+    height: 40px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #060E57, #0a1875);
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(6, 14, 87, 0.2);
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.top-bar-btn:hover {
+    background: linear-gradient(135deg, #0a1875, #060E57);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(6, 14, 87, 0.3);
+}
+
+.top-bar-btn i {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.btn-label {
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* Profile Button Specific Styles */
+.profile-btn {
+    border-radius: 50% !important;
+    width: 48px !important;
+    height: 48px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.profile-btn:hover {
+    background: transparent !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.profile-btn .profile-img-small {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow: 0 8px 24px rgba(6, 14, 87, 0.4);
+    transition: box-shadow 0.3s ease;
+}
+
+.profile-btn:hover .profile-img-small {
+    box-shadow: 0 12px 32px rgba(6, 14, 87, 0.5);
+}
+
+.profile-btn .btn-label {
+    display: none;
+}
+
+/* Profile Dropdown */
+.profile-dropdown {
+    position: relative;
+}
+
+.profile-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    min-width: 320px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1001;
+}
+
+.profile-dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.profile-dropdown-header {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-img-large {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid #f0f2f5;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #050505;
+    margin-bottom: 4px;
+}
+
+.profile-subtitle {
+    font-size: 13px;
+    color: #65676b;
+}
+
+.profile-dropdown-divider {
+    height: 1px;
+    background-color: #e4e6eb;
+    margin: 8px 0;
+}
+
+.profile-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    text-decoration: none !important;
+    color: #050505;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 15px;
+}
+
+.profile-dropdown-item:hover {
+    background-color: #f0f2f5;
+}
+
+.profile-dropdown-item i {
+    font-size: 18px;
+    width: 20px;
+    color: #65676b;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: 0 24px 24px 24px;
+}
+
+/* Footer */
+footer {
+    background-color: #060E57;
+    padding: 30px 0;
+    text-align: center;
+    color: #ffffff;
+    width: 100%;
+    margin-top: auto;
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.copyright {
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+/* Floating Sidebar Toggle Button for Mobile */
+.floating-sidebar-toggle {
+    position: fixed;
+    top: 60px; /* Positioned below the top bar to avoid overlapping page title */
+    left: 12px;
+    z-index: 998;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #060E57, #0a1875);
+    box-shadow: 0 4px 12px rgba(6, 14, 87, 0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.floating-sidebar-toggle:hover {
+    box-shadow: 0 6px 16px rgba(6, 14, 87, 0.5);
+    transform: translateY(-2px);
+}
+
+.floating-sidebar-toggle img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 2000;
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .sidebar.collapsed {
+        width: 240px;
+        transform: translateX(-100%);
+    }
+
+    .sidebar.collapsed.active {
+        transform: translateX(0);
+    }
+
+    .main-wrapper {
+        margin-left: 0 !important;
+    }
+
+    .mobile-sidebar-toggle {
+        display: flex;
+    }
+
+    .page-title {
+        font-size: 18px;
+    }
+    
+    /* Page title header responsive */
+    .page-title-header {
+        font-size: 1.2rem;
+        padding: 7px 18px;
+        margin-left: 0; /* Reset margin on mobile since sidebar is hidden */
+        clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+    }
+
+    .top-bar {
+        padding: 12px 16px;
+        z-index: 997;
+    }
+
+    .main-content {
+        padding: 0 16px 16px 16px;
+    }
+
+    .profile-dropdown-menu {
+        min-width: 280px;
+        z-index: 2001;
+    }
+    
+    /* Ensure sidebar is above everything except modals */
+    .sidebar-overlay {
+        z-index: 1999;
+    }
+    
+    /* Hide button labels on tablet/mobile */
+    .top-bar-btn .btn-label {
+        display: none;
+    }
+    
+    .top-bar-btn {
+        padding: 8px 12px;
+        min-width: 40px;
+        justify-content: center;
+    }
+    
+    .top-bar-btn i {
+        margin: 0;
+    }
+    
+    /* Show floating toggle button when sidebar is hidden */
+    .floating-sidebar-toggle {
+        display: flex;
+    }
+    
+    .sidebar.active ~ .main-wrapper .floating-sidebar-toggle,
+    .sidebar.active ~ .floating-sidebar-toggle {
+        display: none;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .page-title {
+        font-size: 16px;
+    }
+    
+    /* Page title header responsive */
+    .page-title-header {
+        font-size: 1rem;
+        padding: 6px 16px;
+    }
+
+    .top-bar {
+        padding: 8px 12px;
+        height: 52px;
+        z-index: 997;
+    }
+
+    .main-content {
+        padding: 0 12px 12px 12px;
+    }
+
+    .profile-btn {
+        width: 44px !important;
+        height: 44px !important;
+    }
+    
+    .profile-btn .profile-img-small {
+        width: 44px;
+        height: 44px;
+    }
+
+    .profile-dropdown-menu {
+        min-width: 260px;
+        right: -12px;
+        z-index: 2001;
+    }
+    
+    .sidebar {
+        z-index: 2000;
+    }
+    
+    .sidebar-overlay {
+        z-index: 1999;
+    }
+    
+    .floating-sidebar-toggle {
+        width: 44px;
+        height: 44px;
+        z-index: 998;
+    }
+    
+    .floating-sidebar-toggle img {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .page-title {
+        display: none;
+    }
+    
+    /* Page title header responsive */
+    .page-title-header {
+        font-size: 0.9rem;
+        padding: 5px 12px;
+    }
+    
+    .page-title-header .me-2 {
+        margin-right: 0.3rem !important;
+    }
+
+    .top-bar-right {
+        gap: 8px;
+    }
+
+    .profile-dropdown-menu {
+        min-width: 240px;
+        z-index: 2001;
+    }
+    
+    .top-bar {
+        padding: 8px 10px;
+        height: 50px;
+        z-index: 997;
+    }
+    
+    .profile-btn {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .profile-btn .profile-img-small {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .sidebar {
+        z-index: 2000;
+    }
+    
+    .sidebar-overlay {
+        z-index: 1999;
+    }
+    
+    .floating-sidebar-toggle {
+        z-index: 998;
+    }
+}
+
+@media (max-width: 420px) {
+    /* Page title header responsive */
+    .page-title-header {
+        font-size: 0.85rem;
+        padding: 5px 10px;
+        clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%);
+    }
+}
+
+/* Scrollbar Styling for Sidebar */
+.sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Animation for sidebar links */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.sidebar-link {
+    animation: slideIn 0.3s ease forwards;
+}
+
+.sidebar-link:nth-child(1) { animation-delay: 0.05s; }
+.sidebar-link:nth-child(2) { animation-delay: 0.1s; }
+.sidebar-link:nth-child(3) { animation-delay: 0.15s; }
+.sidebar-link:nth-child(4) { animation-delay: 0.2s; }
+.sidebar-link:nth-child(5) { animation-delay: 0.25s; }
+.sidebar-link:nth-child(6) { animation-delay: 0.3s; }
+
+
+/* Critical z-index fixes for mobile sidebar - must override other styles */
+@media (max-width: 991.98px) {
+
+    /* Ensure sidebar and overlay are above all content */
+    #uniSidebar {
+        z-index: 2000 !important;
+    }
+
+    #sidebarOverlay {
+        z-index: 1999 !important;
+    }
+
+    /* Lower z-index for content elements */
+    .profile-display,
+    .flex-container {
+        z-index: 997 !important;
+    }
+
+    .top-bar {
+        z-index: 996 !important;
+    }
+
+    .table thead th {
+        z-index: 995 !important;
+    }
+
+    /* Floating toggle should be below sidebar when open */
+    #floatingSidebarToggle {
+        z-index: 998 !important;
+    }
+
+    /* Profile dropdown should be above sidebar */
+    #profileDropdownMenu {
+        z-index: 2001 !important;
+    }
+}
+
+
+/* Ensure main wrapper has correct margins based on sidebar state */
+@media (min-width: 992px) {
+    .main-wrapper {
+        margin-left: 240px;
+        width: calc(100% - 240px);
+    }
+
+    .sidebar.collapsed ~ .main-wrapper {
+        margin-left: 72px;
+        width: calc(100% - 72px);
+    }
+}
+
+@media (max-width: 991.98px) {
+    .main-wrapper {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+}
+
+
+
+/* Page Title Header Inside Content Area */
+.page-title-header-inline {
+    background: linear-gradient(135deg, #060E57, #4169E1);
+    margin: -32px -32px 32px -32px;
+    padding: 20px 32px;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 4px 12px rgba(6, 14, 87, 0.15);
+}
+
+.page-title-header-inline h1 {
+    color: #ffffff;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.page-title-header-inline h1 i {
+    font-size: 1.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .page-title-header-inline {
+        margin: -24px -24px 24px -24px;
+        padding: 16px 24px;
+    }
+    
+    .page-title-header-inline h1 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-title-header-inline {
+        margin: -20px -20px 20px -20px;
+        padding: 14px 20px;
+    }
+    
+    .page-title-header-inline h1 {
+        font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title-header-inline {
+        margin: -16px -16px 16px -16px;
+        padding: 12px 16px;
+    }
+    
+    .page-title-header-inline h1 {
+        font-size: 1.1rem;
+        gap: 8px;
+    }
+    
+    .page-title-header-inline h1 i {
+        font-size: 1.2rem;
+    }
+}
+
+
+/* Page Header inside Counselor Sidebar */
+.counselor-page-header {
+    background: linear-gradient(135deg, #060E57, #4169E1);
+    color: #ffffff;
+    padding: 16px 24px;
+    margin: -24px 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(6, 14, 87, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.counselor-page-header i {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.counselor-page-header span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Update sidebar h2 styling to work with new header */
+.counselor-sidebar h2 {
+    color: #060E57;
+    font-size: 20px;
+    padding: 8px 24px 20px;
+    font-weight: 700;
+    margin: 0;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+    /* Mobile sidebar drawer behavior */
+    .counselor-sidebar {
+        padding-top: 0; /* Reset padding since header handles top spacing */
+    }
+    
+    .counselor-page-header {
+        margin: 0 0 20px 0;
+        padding: 14px 20px;
+        font-size: 1.15rem;
+        position: sticky;
+        top: 0;
+    }
+    
+    .counselor-page-header i {
+        font-size: 1.2rem;
+    }
+    
+    .counselor-sidebar h2 {
+        font-size: 18px;
+        padding: 8px 20px 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .counselor-page-header {
+        padding: 12px 16px;
+        font-size: 1.05rem;
+        gap: 10px;
+    }
+    
+    .counselor-page-header i {
+        font-size: 1.1rem;
+    }
+    
+    .counselor-sidebar h2 {
+        font-size: 17px;
+        padding: 6px 16px 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .counselor-page-header {
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        gap: 8px;
+    }
+    
+    .counselor-page-header i {
+        font-size: 1rem;
+    }
+    
+    .counselor-sidebar h2 {
+        font-size: 16px;
+        padding: 6px 14px 12px;
+    }
+}
+
+/* Desktop - ensure sidebar padding adjustment */
+@media (min-width: 992px) {
+    .counselor-sidebar {
+        padding-top: 0;
+    }
+    
+    .counselor-page-header {
+        margin-top: 0;
+    }
+}
+
+/* ===================================
+   MOBILE SIDEBAR FIX FOR COUNSELOR
+   =================================== */
+
+/* Fix for counselor sidebar content visibility on mobile */
+@media (max-width: 991.98px) {
+    /* Ensure sidebar content is visible and properly positioned */
+    .sidebar {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        height: 100vh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Ensure sidebar content takes full height */
+    .sidebar-content {
+        min-height: 100vh;
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 12px 0 !important;
+    }
+    
+    /* Fix for counselor page header inside sidebar */
+    .counselor-page-header {
+        position: relative !important;
+        top: auto !important;
+        z-index: 1 !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+    
+    /* Ensure sidebar navigation is visible */
+    .sidebar-nav {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 !important;
+        overflow-y: auto !important;
+        padding: 0 8px !important;
+    }
+    
+    /* Ensure sidebar links are visible */
+    .sidebar-link {
+        display: flex !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    
+    /* Ensure text is visible in mobile sidebar */
+    .sidebar-text,
+    .sidebar-brand-text {
+        display: inline !important;
+        opacity: 1 !important;
+        width: auto !important;
+        overflow: visible !important;
+    }
+    
+    /* Fix sidebar transform when active */
+    .sidebar.active {
+        transform: translateX(0) !important;
+    }
+    
+    /* Ensure sidebar is above overlay */
+    .sidebar.active {
+        z-index: 2000 !important;
+    }
+    
+    .sidebar-overlay.active {
+        z-index: 1999 !important;
+    }
+}
+
+/* Additional fix for very small screens */
+@media (max-width: 767.98px) {
+    .sidebar {
+        width: 280px !important; /* Slightly wider for better visibility */
+    }
+    
+    .sidebar-content {
+        padding: 8px 0 !important;
+    }
+    
+    .sidebar-nav {
+        padding: 0 6px !important;
+    }
+}
+
+/* Fix for sidebar when collapsed class is incorrectly applied on mobile */
+@media (max-width: 991.98px) {
+    .sidebar.collapsed {
+        width: 280px !important; /* Override collapsed width on mobile */
+    }
+    
+    .sidebar.collapsed .sidebar-text,
+    .sidebar.collapsed .sidebar-brand-text {
+        opacity: 1 !important;
+        width: auto !important;
+        display: inline !important;
+    }
+}
+

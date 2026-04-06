@@ -1,0 +1,728 @@
+body {
+    background-color: #f7f7f7;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Main container styling */
+.container.py-5 {
+    background: linear-gradient(135deg, #f7f7f7 80%, #d1daf0 100%);
+    border-radius: 18px;
+    box-shadow: 0 2px 16px rgba(3, 21, 64, 0.1);
+    padding: 2rem !important;
+    animation: fadeInUp 0.7s;
+    max-width: 1270px !important;
+    margin: 10px auto;
+    width: calc(100% - 20px) !important;
+}
+
+/* Row layout improvements */
+.container.py-5>.row {
+    display: flex;
+    gap: 2rem;
+    margin: 0;
+}
+
+/* Column sizing */
+.container.py-5>.row>.col-lg-6 {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.page-header {
+    background: linear-gradient(135deg, #060E57, #0A1875);
+    color: white;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.page-header.h2 {
+    color: white;
+}
+
+.resource-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.resource-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.resource-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 1.8rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.file-icon { 
+    background: #e0f2fe; 
+    color: #0284c7; 
+}
+
+.link-icon { 
+    background: #fef3c7; 
+    color: #d97706; 
+}
+
+.badge-status { 
+    padding: 0.4rem 0.8rem; 
+    border-radius: 6px; 
+    font-size: 0.85rem; 
+}
+
+.btn-action { 
+    padding: 0.4rem 0.8rem; 
+    font-size: 0.85rem; 
+    margin: 0 0.2rem; 
+}
+
+.filter-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #64748b;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* ===== ENHANCED PREVIEW MODAL STYLES ===== */
+
+/* Preview Modal Enhancements */
+#previewModal .modal-dialog {
+    max-width: 95vw;
+}
+
+#previewModal .modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+#previewModal .modal-header {
+    background: linear-gradient(135deg, #060E57, #0A1875);
+    color: white;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    padding: 1.25rem 1.5rem;
+}
+
+#previewModal .modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+#previewModal .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+#previewModal .btn-close:hover {
+    opacity: 1;
+}
+
+#previewModal .modal-body {
+    padding: 1.5rem;
+    background: #f8f9fa;
+}
+
+/* Document Preview Styles */
+.document-preview {
+    line-height: 1.6;
+    font-size: 1rem;
+    color: #333;
+}
+
+.document-preview h1,
+.document-preview h2,
+.document-preview h3,
+.document-preview h4,
+.document-preview h5,
+.document-preview h6 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    color: #060E57;
+}
+
+.document-preview h1 { font-size: 2rem; }
+.document-preview h2 { font-size: 1.75rem; }
+.document-preview h3 { font-size: 1.5rem; }
+.document-preview h4 { font-size: 1.25rem; }
+.document-preview h5 { font-size: 1.1rem; }
+.document-preview h6 { font-size: 1rem; }
+
+.document-preview p {
+    margin-bottom: 1rem;
+}
+
+.document-preview ul,
+.document-preview ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.document-preview li {
+    margin-bottom: 0.5rem;
+}
+
+.document-preview table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.document-preview th,
+.document-preview td {
+    border: 1px solid #dee2e6;
+    padding: 0.75rem;
+}
+
+.document-preview th {
+    background-color: #e9ecef;
+    font-weight: 600;
+}
+
+.document-preview img {
+    max-width: 100%;
+    height: auto;
+    margin: 1rem 0;
+    border-radius: 8px;
+}
+
+/* Excel Preview Styles */
+.excel-preview {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.excel-preview .nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.excel-preview .nav-tabs .nav-link {
+    color: #495057;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.excel-preview .nav-tabs .nav-link:hover {
+    border-bottom-color: #0A1875;
+    color: #0A1875;
+}
+
+.excel-preview .nav-tabs .nav-link.active {
+    color: #060E57;
+    border-bottom-color: #060E57;
+    background: transparent;
+}
+
+.excel-preview table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+}
+
+.excel-preview th,
+.excel-preview td {
+    border: 1px solid #dee2e6;
+    padding: 0.5rem;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.excel-preview th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #060E57;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.excel-preview tr:hover {
+    background-color: #f8f9fa;
+}
+
+.excel-preview tbody tr:nth-child(even) {
+    background-color: #fcfcfc;
+}
+
+/* Universal Preview Zoom Container - Works for All File Types */
+.preview-zoom-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 500px;
+}
+
+.preview-zoom-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 1rem;
+    background: linear-gradient(135deg, #060E57, #0A1875);
+    border-radius: 8px 8px 0 0;
+    gap: 0.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    flex-wrap: wrap;
+}
+
+.preview-zoom-toolbar .btn {
+    padding: 0.5rem 1rem;
+    color: white;
+    border-color: rgba(255,255,255,0.3);
+}
+
+.preview-zoom-toolbar .btn:hover {
+    background-color: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.5);
+}
+
+.zoom-level-display {
+    font-weight: 600;
+    color: white;
+    min-width: 50px;
+    text-align: center;
+    padding: 0.5rem 1rem;
+    background: rgba(255,255,255,0.2);
+    border-radius: 6px;
+}
+
+.preview-zoom-wrapper {
+    flex: 1;
+    overflow: auto;
+    background: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+    padding: 2rem;
+    min-height: 400px;
+    position: relative;
+    user-select: none;
+}
+
+/* Preview Content Styles */
+#previewContent {
+    transition: transform 0.2s ease;
+    transform-origin: top left;
+}
+
+.preview-content-image {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    cursor: default;
+}
+
+.preview-content-iframe {
+    width: 100%;
+    height: 600px;
+    border: none;
+    border-radius: 8px;
+    background: white;
+}
+
+/* Document Preview in Zoom Container */
+.preview-zoom-wrapper .document-preview {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    line-height: 1.6;
+    font-size: 1rem;
+    color: #333;
+    max-width: 100%;
+}
+
+/* Excel Preview in Zoom Container */
+.preview-zoom-wrapper .excel-preview {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.preview-zoom-wrapper .excel-sheet-content {
+    overflow: auto;
+    max-height: 60vh;
+}
+
+/* Scrollbar for Preview Wrapper */
+.preview-zoom-wrapper::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.preview-zoom-wrapper::-webkit-scrollbar-track {
+    background: #e9ecef;
+}
+
+.preview-zoom-wrapper::-webkit-scrollbar-thumb {
+    background: #adb5bd;
+    border-radius: 5px;
+}
+
+.preview-zoom-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #868e96;
+}
+
+/* Document Preview Styles */
+.video-preview-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+    border-radius: 8px;
+    padding: 2rem;
+    min-height: 500px;
+}
+
+#previewVideo {
+    width: 100%;
+    max-height: 70vh;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+#previewVideo:focus {
+    outline: 3px solid #0A1875;
+    outline-offset: 4px;
+}
+
+/* Video Loading State */
+video {
+    background: #000;
+}
+
+/* Video Preview Styles - OLD, REMOVE */
+video {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+video:focus {
+    outline: 2px solid #0A1875;
+    outline-offset: 4px;
+}
+
+/* Image Preview Styles */
+.modal-body img.img-fluid {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* PDF Preview Styles */
+iframe {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Loading State */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+}
+
+/* Preview Not Available State */
+.text-center.py-5 {
+    background: white;
+    border-radius: 8px;
+    padding: 3rem !important;
+}
+
+.text-center.py-5 i.fa-4x {
+    font-size: 4rem;
+    opacity: 0.5;
+}
+
+/* Alert Modal Styles */
+#alertModal .modal-content,
+#confirmationModal .modal-content,
+#noticeModal .modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+}
+
+#alertModal .modal-header,
+#confirmationModal .modal-header,
+#noticeModal .modal-header {
+    padding: 1.25rem 1.5rem;
+}
+
+#alertModal .modal-body,
+#confirmationModal .modal-body,
+#noticeModal .modal-body {
+    padding: 1.5rem;
+    font-size: 1rem;
+}
+
+#alertIcon i,
+#noticeIcon i {
+    font-size: 1.5rem;
+}
+
+/* Success Alert Icon */
+#alertIcon .text-success {
+    color: #28a745 !important;
+}
+
+/* Error Alert Icon */
+#alertIcon .text-danger {
+    color: #dc3545 !important;
+}
+
+/* Warning Alert Icon */
+#alertIcon .text-warning {
+    color: #ffc107 !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    #previewModal .modal-dialog {
+        max-width: 100%;
+        margin: 0.5rem;
+    }
+    
+    .document-preview {
+        font-size: 0.9rem;
+        padding: 1rem !important;
+    }
+    
+    .excel-preview table {
+        font-size: 0.75rem;
+    }
+    
+    .excel-preview th,
+    .excel-preview td {
+        padding: 0.35rem;
+    }
+    
+    #previewModal .modal-body {
+        padding: 1rem;
+    }
+    
+    .resource-card {
+        padding: 1rem;
+    }
+    
+    .resource-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+    
+    .btn-action {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.8rem;
+        margin: 0.1rem;
+    }
+    
+    /* Mobile preview zoom adjustments */
+    .preview-zoom-container {
+        min-height: 400px;
+    }
+    
+    .preview-zoom-toolbar {
+        padding: 0.75rem;
+        gap: 0.25rem;
+    }
+    
+    .preview-zoom-toolbar .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.875rem;
+    }
+    
+    .zoom-level-display {
+        font-size: 0.875rem;
+        min-width: 45px;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .preview-zoom-wrapper {
+        padding: 1rem;
+        min-height: 300px;
+    }
+    
+    /* Mobile video adjustments */
+    .video-preview-container {
+        padding: 1rem;
+        min-height: 350px;
+    }
+    
+    #previewVideo {
+        max-height: 60vh;
+    }
+}
+
+/* Animation for fade in */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Footer */
+footer {
+    background-color: #060E57;
+    padding: 30px 0;
+    text-align: center;
+    color: #ffffff;
+    width: 100%;
+    margin-top: auto;
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Scrollbar Styles for Preview */
+.document-preview::-webkit-scrollbar,
+.excel-preview::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.document-preview::-webkit-scrollbar-track,
+.excel-preview::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.document-preview::-webkit-scrollbar-thumb,
+.excel-preview::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.document-preview::-webkit-scrollbar-thumb:hover,
+.excel-preview::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+
+/* YouTube Preview Container */
+.youtube-preview-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a1a;
+    border-radius: 8px;
+    padding: 2rem;
+    min-height: 500px;
+}
+
+#youtubePlayer {
+    max-width: 100%;
+    width: 100%;
+}
+
+#youtubePlayer iframe {
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+/* PowerPoint Preview Container */
+.ppt-preview-container {
+    min-height: 600px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.ppt-preview-container .btn-group .btn {
+    transition: all 0.3s ease;
+}
+
+.ppt-preview-container .btn-group .btn.active {
+    background-color: #0A1875;
+    color: white;
+    border-color: #0A1875;
+}
+
+#pptViewerFrame {
+    position: relative;
+    min-height: 600px;
+}
+
+#pptViewerFrame iframe {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Responsive YouTube and PPT Player */
+@media (max-width: 768px) {
+    .youtube-preview-container {
+        padding: 1rem;
+        min-height: 350px;
+    }
+    
+    #youtubePlayer iframe {
+        height: 300px !important;
+    }
+    
+    .ppt-preview-container {
+        padding: 0.5rem;
+    }
+    
+    #pptViewerFrame iframe {
+        height: 400px !important;
+    }
+    
+    .ppt-preview-container .btn-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .ppt-preview-container .btn-group .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
