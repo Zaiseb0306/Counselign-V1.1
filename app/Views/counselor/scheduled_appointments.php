@@ -33,6 +33,10 @@
                     <i class="fas fa-calendar-alt"></i>
                     <span class="sidebar-text">Scheduled Appointments</span>
                 </a>
+                <a href="<?= base_url('counselor/pending-feedback') ?>" class="sidebar-link" title="Pending Feedback">
+                    <i class="fas fa-star"></i>
+                    <span class="sidebar-text">Pending Feedback</span>
+                </a>
                 <a href="<?= base_url('counselor/follow-up') ?>" class="sidebar-link" title="Follow-up Sessions">
                     <i class="fas fa-clipboard-list"></i>
                     <span class="sidebar-text">Follow-up Sessions</span>
@@ -147,7 +151,7 @@
                                     <thead>
                                         <tr>
                                             <th scope="col">Student ID</th>
-                                            <th scope="col">Name</th>
+                                            <th scope="col">Username</th>
                                             <th scope="col">Appointed Date</th>
                                             <th scope="col">Time</th>
                                             <th scope="col">Method</th>
@@ -197,23 +201,70 @@
         </main>
     </div>
 
-    <div class="modal fade" id="cancellationReasonModal" tabindex="-1" aria-labelledby="cancellationReasonModalLabel" aria-hidden="true">
+    <!-- Counselor Remarks Modal -->
+    <div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header bg-secondary text-white">
-                    <h5 class="modal-title" id="cancellationReasonModalLabel"><i class="fas fa-times-circle me-2"></i>Cancellation Reason</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-header bg-success">
+                    <h5 class="modal-title" id="remarksModalLabel">
+                        <i class="fas fa-check me-2"></i>Mark Appointment as Completed
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="cancellationReasonForm">
+                <div class="modal-body" style="padding: 1rem;">
+                    <form id="remarksForm" style="display: flex; flex-direction: column;">
                         <div class="mb-3">
-                            <label for="cancellationReason" class="form-label fw-bold">Please provide a reason for cancelling this appointment:</label>
-                            <textarea class="form-control" id="cancellationReason" rows="4" placeholder="Enter the reason for cancellation here..." required></textarea>
+                            <label for="counselorRemarks" class="form-label fw-bold">Counselor Remarks:</label>
+                            <textarea class="form-control" id="counselorRemarks" rows="4"
+                                placeholder="Enter your remarks about this counseling session..." required></textarea>
+                            <div class="form-text">These remarks will be saved with the appointment record.</div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" id="confirmCancellationBtn"><i class="fas fa-check me-1"></i>Confirm Cancellation</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirmCompleteBtn">
+                        <i class="fas fa-check me-1"></i>Mark as Completed
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title" id="rescheduleModalLabel">
+                        <i class="fas fa-calendar-alt me-2"></i>Re-schedule Appointment
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 1rem;">
+                    <form id="rescheduleForm" style="display: flex; flex-direction: column;">
+                        <div class="mb-3">
+                            <label for="rescheduleDate" class="form-label fw-bold">New Date:</label>
+                            <input type="date" class="form-control" id="rescheduleDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rescheduleTime" class="form-label fw-bold">New Time:</label>
+                            <select class="form-select" id="rescheduleTime" required>
+                                <option value="">Select available time</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rescheduleReason" class="form-label fw-bold">Reason for rescheduling:</label>
+                            <textarea class="form-control" id="rescheduleReason" rows="3"
+                                placeholder="Enter the reason for rescheduling..." required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-warning" id="confirmRescheduleBtn">
+                        <i class="fas fa-check me-1"></i>Confirm Re-schedule
+                    </button>
                 </div>
             </div>
         </div>

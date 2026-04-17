@@ -204,12 +204,12 @@
                                 </select>
                             </div>
 
-                            <!-- Brief Description -->
-                            <div class="form-group full-width">
-                                <label for="briefDescription">Brief Description (Optional)</label>
-                                <textarea id="briefDescription" name="description" class="form-control" rows="3"
-                                    placeholder="Briefly describe what you'd like to discuss..."></textarea>
-                            </div>
+                             <!-- Student Concern -->
+                             <div class="form-group">
+                                 <label for="briefDescription">Student Concern <span class="text-danger">*</span></label>
+                                 <textarea id="briefDescription" name="description" class="form-control" rows="3"
+                                     placeholder="Describe your concern that you would like to discuss..." required></textarea>
+                             </div>
 
                             <!-- Counseling Informed Consent Accordion -->
                             <div class="consent-accordion-container">

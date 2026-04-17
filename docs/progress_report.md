@@ -4,8 +4,49 @@
 
 | Module Name | Description | Status |
 |-------------|-------------|--------|
+| Admin Appointments | Admin appointment management and viewing | ✓ Complete |
+| Admin Get All Appointments | Retrieve and display all system appointments | ✓ Complete |
+| Admin History Reports | Admin-side appointment history and reporting | ✓ Complete |
+| Admin Users API | User management endpoints | ✓ Complete |
+| Admin Counselors API | Counselor management endpoints | ✓ Complete |
+| Admin Announcements | Admin announcement management | ✓ Complete |
+| Admin Dashboard | Admin dashboard with analytics | ✓ Complete |
+| Admin Follow Up Sessions | Admin follow-up session management | ✓ Complete |
+| Admin Message | Admin messaging functionality | ✓ Complete |
+| Admin Events | Admin events management | ✓ Complete |
+| Admin Filter Data | Data filtering for appointments/sessions | ✓ Complete |
+| Admin Database Health | Database health monitoring | ✓ Complete |
+| Admin Profile API | Admin profile management | ✓ Complete |
+| Student Appointment Scheduling | Student can schedule appointments | ✓ Complete |
+| Student Dashboard | Student dashboard | ✓ Complete |
+| Student Profile | Student profile management | ✓ Complete |
+| Student PDS | Personal Data Sheet management | ✓ Complete |
+| Student Notifications | Student notifications | ✓ Complete |
+| Student Events | Student events viewing | ✓ Complete |
+| Student Follow Up Sessions | Follow-up session management | ✓ Complete |
+| Student Message | Student messaging | ✓ Complete |
+| Student Announcements | Student announcements viewing | ✓ Complete |
+| Student PDS Atomic | Atomic PDS operations | ✓ Complete |
+| Student Session Check | Session validation | ✓ Complete |
+| Counselor Appointments | Counselor appointment management | ✓ Complete |
+| Counselor Get All Appointments | View all appointments for counselor | ✓ Complete |
+| Counselor History Reports | Generate and view appointment history reports | ✓ Complete |
+| Counselor Dashboard | Counselor dashboard | ✓ Complete |
+| Counselor Profile | Counselor profile management | ✓ Complete |
+| Counselor Availability | Counselor availability management | ✓ Complete |
+| Counselor Announcements | Counselor announcements | ✓ Complete |
+| Counselor Follow Up | Follow-up session management | ✓ Complete |
+| Counselor Events | Counselor events | ✓ Complete |
+| Counselor Filter Data | Data filtering for counselor | ✓ Complete |
+| Counselor Notifications | Counselor notifications | ✓ Complete |
+| Counselor Message | Counselor messaging | ✓ Complete |
 | Middleware | Flask-CodeIgniter middleware integration for authentication and session management | ✓ Complete |
 | Reschedule | Appointment rescheduling functionality for students and counselors | ✓ Complete |
+| Email Notifications | Email templates and notification service | ✓ Complete |
+| Database Migrations | Schema management including counselor remarks | ✓ Complete |
+| Authentication | Login, logout, password management | ✓ Complete |
+| Filter Data | Data filtering for appointments/sessions | ✓ Complete |
+| Counselor Remarks | Allow counselors to add remarks to appointments | ✓ Complete |
 
 ---
 
@@ -16,7 +57,6 @@
 | Remove Cancelled Function | Remove cancellation functionality from the system | In Progress |
 | Pending Status Rename | Change "Pending" status to "Waiting to Accept" in counselor view | In Progress |
 | Student Concern | Student concern/issue submission feature | In Progress |
-| Counselor Remarks | Allow counselors to add remarks to appointments | In Progress |
 | Student Feedback | Enable students to provide feedback after appointments | In Progress |
 | Time-Based PDF Report | Generate reports with timestamps in PDF export | In Progress |
 | Sentiment Analysis | Add AI sentiment analysis for student feedback | In Progress |
@@ -26,8 +66,8 @@
 ## Overall Progress
 
 - [ ] 0–25%
-- [x] 26–50%
-- [ ] 51–75%
+- [ ] 26–50%
+- [x] 51–75%
 - [ ] 76–100%
 
 ---
@@ -43,49 +83,23 @@
 
 ## Action Plan / Next Steps
 
-1. Complete pending status rename across all views and database
-2. Implement student concern submission form
-3. Add counselor remarks input field in appointment details
-4. Create student feedback form post-appointment
-5. Integrate PDF timestamp generation in history reports
-6. Implement sentiment analysis for feedback using NLP library
+1. Complete pending status rename (Pending → "Waiting to Accept") across all views and database
+2. Implement student concern submission feature
+3. Create student feedback form post-appointment
+4. Integrate PDF timestamp generation in history reports
+5. Implement sentiment analysis for feedback using NLP library
+6. Remove cancellation functionality
 
 ---
 
-## Working Modules (All Functional)
+## Action Plan / Next Steps
 
-| Module | Description |
-|--------|-------------|
-| Admin Appointments | Admin appointment management and viewing |
-| Admin Get All Appointments | Retrieve and display all system appointments |
-| Admin History Reports | Admin-side appointment history and reporting |
-| Admin Users API | User management endpoints |
-| Admin Counselors API | Counselor management endpoints |
-| Admin Announcements | Admin announcement management |
-| Admin Dashboard | Admin dashboard with analytics |
-| Student Appointment Scheduling | Student can schedule appointments |
-| Student Dashboard | Student dashboard |
-| Student Profile | Student profile management |
-| Student PDS | Personal Data Sheet management |
-| Student Notifications | Student notifications |
-| Student Events | Student events viewing |
-| Student Follow Up Sessions | Follow-up session management |
-| Student Message | Student messaging |
-| Counselor Appointments | Counselor appointment management |
-| Counselor Get All Appointments | View all appointments for counselor |
-| Counselor History Reports | Generate and view appointment history reports |
-| Counselor Dashboard | Counselor dashboard |
-| Counselor Profile | Counselor profile management |
-| Counselor Availability | Counselor availability management |
-| Counselor Announcements | Counselor announcements |
-| Counselor Follow Up | Follow-up session management |
-| Counselor Events | Counselor events |
-| Middleware Integration | Flask-CodeIgniter authentication middleware |
-| Reschedule Functionality | Appointment rescheduling for students/counselors |
-| Email Notifications | Email templates and notification service |
-| Database Migrations | Schema management including counselor remarks |
-| Authentication | Login, logout, password management |
-| Filter Data | Data filtering for appointments/sessions |
+1. Complete pending status rename (Pending → "Waiting to Accept") across all views and database
+2. Implement student concern submission feature
+3. Create student feedback form post-appointment
+4. Integrate PDF timestamp generation in history reports
+5. Implement sentiment analysis for feedback using NLP library
+6. Remove cancellation functionality
 
 ---
 

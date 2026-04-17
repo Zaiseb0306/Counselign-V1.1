@@ -36,24 +36,40 @@ class Appointments extends BaseController
 
         $db = \Config\Database::connect();
 
-        // Use counselor's exact working pattern but for ALL appointments (no WHERE clause)
+        // Query to get appointment data with basic info
         $query = "SELECT
-                    a.*,
-                    u.email as user_email,
-                    u.username,
-                    COALESCE(CONCAT(spi.last_name, ', ', spi.first_name), u.username) AS student_name,
-                    CONCAT(sai.course, ' - ', sai.year_level) as course_year,
-                    sai.course,
-                    sai.year_level,
-                    COALESCE(c.name, 'No Preference') as counselor_name
+                    a.id,
+                    a.student_id,
+                    COALESCE(u.username, a.student_id) AS student_name,
+                    a.preferred_date as appointed_date,
+                    a.preferred_time as appointed_time,
+                    a.method_type,
+                    COALESCE(a.consultation_type, 'Individual Consultation') as consultation_type,
+                    a.purpose,
+                    a.description,
+                    a.counselor_remarks,
+                    COALESCE(c.name, 'No Preference') as counselor_name,
+                    a.status, a.reason,
+                    'pending' as feedback_status,
+                    a.created_at
                   FROM appointments a
                   LEFT JOIN users u ON a.student_id = u.user_id
-                  LEFT JOIN student_personal_info spi ON spi.student_id = u.user_id
-                  LEFT JOIN student_academic_info sai ON sai.student_id = u.user_id
                   LEFT JOIN counselors c ON c.counselor_id = a.counselor_preference
                   ORDER BY a.created_at DESC";
 
-        $appointments = $db->query($query)->getResultArray();
+        log_message('info', 'Admin Appointments getAll: Executing query: ' . $query);
+        try {
+            $appointments = $db->query($query)->getResultArray();
+            log_message('info', 'Admin Appointments getAll: Found ' . count($appointments) . ' appointments');
+
+            // Log first appointment for debugging
+            if (!empty($appointments)) {
+                log_message('info', 'First appointment: ' . json_encode($appointments[0]));
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Admin Appointments getAll: Query failed: ' . $e->getMessage());
+            $appointments = [];
+        }
 
         return $this->respond([
             'status' => 'success',
@@ -232,11 +248,11 @@ class Appointments extends BaseController
                     </ul>
                     <p>Please arrive 10 minutes before your scheduled time. If you need to reschedule or cancel, please do so at least 24 hours in advance.</p>
                     <p>Best regards,<br>University Guidance Counseling Office</p>";
-            } else if ($status === 'rejected') {
+            } else if ($status === 'rescheduled') {
                 $mail->Body = "
-                    <h2>Appointment Rejected</h2>
+                    <h2>Appointment Rescheduled</h2>
                     <p>Dear {$appointment_details['user_username']},</p>
-                    <p>We regret to inform you that your counseling appointment has been rejected.</p>
+                    <p>We regret to inform you that your counseling appointment has been rescheduled.</p>
                     <p><strong>Appointment Details:</strong></p>
                     <ul>
                         <li><strong>Date:</strong> {$date}</li>
@@ -577,5 +593,20 @@ class Appointments extends BaseController
                 'message' => 'Error tracking export activity'
             ], 500);
         }
+    }
+
+    public function getFeedbackStats()
+    {
+        if (!session()->get('logged_in') || session()->get('role') !== 'admin') {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Unauthorized']);
+        }
+
+        $feedbackModel = new \App\Models\StudentFeedbackModel();
+        $stats = $feedbackModel->getFeedbackStats(); // No counselor ID for admin
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data' => $stats
+        ]);
     }
 }

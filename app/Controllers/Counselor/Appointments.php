@@ -161,12 +161,13 @@ class Appointments extends BaseController
         $appointment_id = $this->request->getPost('appointment_id');
         $new_status = strtolower($this->request->getPost('status'));
         $rejection_reason = $this->request->getPost('rejection_reason');
+        $counselor_remarks = $this->request->getPost('counselor_remarks');
 
         if (!$appointment_id || !$new_status) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Missing required parameters']);
         }
 
-        $valid_statuses = ['approved', 'rejected', 'completed', 'cancelled', 'pending'];
+        $valid_statuses = ['approved', 'rejected', 'completed', 'feedback_pending', 'cancelled', 'pending'];
         if (!in_array($new_status, $valid_statuses)) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Invalid status value']);
         }
@@ -185,18 +186,30 @@ class Appointments extends BaseController
             $updateData['reason'] = 'Reason from Counselor: ' . $rejection_reason;
         }
 
+        if ($new_status === 'completed' && !empty($counselor_remarks)) {
+            $updateData['counselor_remarks'] = $counselor_remarks;
+            $updateData['status'] = 'feedback_pending'; // Change to feedback_pending instead of completed
+        }
+
         $builder->update($updateData);
 
         // Get the updated appointment data for email notification
         $updatedAppointment = $builder->where('id', $appointment_id)->get()->getRowArray();
-        
+
+        $emailSent = false;
+        $notificationCreated = false;
+
         if ($updatedAppointment) {
             // Send email notification to student
-            $this->sendAppointmentNotificationToStudent($updatedAppointment, $new_status);
-            
-            // Create notification for student when status is approved, rejected, or cancelled
-            if (in_array($new_status, ['approved', 'rejected', 'cancelled'])) {
-                $this->createAppointmentStatusNotification($updatedAppointment, $new_status, $rejection_reason);
+            if ($new_status === 'completed') {
+                $this->sendAppointmentNotificationToStudent($updatedAppointment, 'completed');
+                $emailSent = true;
+            }
+
+            // Create notification for student when status is approved, rejected, cancelled, or completed (feedback_pending)
+            if (in_array($new_status, ['approved', 'rejected', 'cancelled', 'completed', 'feedback_pending'])) {
+                $this->createAppointmentStatusNotification($updatedAppointment, 'completed', $rejection_reason);
+                $notificationCreated = true;
             }
         }
 
@@ -206,7 +219,19 @@ class Appointments extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => 'Failed to update appointment status']);
         }
 
-        return $this->response->setJSON(['status' => 'success', 'message' => 'Appointment status updated successfully']);
+        // Build success message based on what was sent
+        $successMessage = 'Appointment status updated successfully';
+        if ($new_status === 'completed' || $new_status === 'feedback_pending') {
+            if ($emailSent && $notificationCreated) {
+                $successMessage = 'Appointment marked as completed successfully. Email and in-system notification sent to the student.';
+            } else if ($emailSent) {
+                $successMessage = 'Appointment marked as completed successfully. Email notification sent to the student.';
+            } else if ($notificationCreated) {
+                $successMessage = 'Appointment marked as completed successfully. In-system notification sent to the student.';
+            }
+        }
+
+        return $this->response->setJSON(['status' => 'success', 'message' => $successMessage]);
     }
 
     /**
@@ -425,6 +450,22 @@ class Appointments extends BaseController
                 $emailSent = $emailService->sendAppointmentRejectionNotification($appointmentData['student_id'], $appointmentData, $counselorInfo);
             } elseif ($actionType === 'cancelled') {
                 $emailSent = $emailService->sendAppointmentCancellationByCounselorNotification($appointmentData['student_id'], $appointmentData, $counselorInfo);
+            } elseif ($actionType === 'completed') {
+                // Send feedback notification when appointment is marked as completed (status becomes feedback_pending)
+                $studentEmail = $appointmentData['email'] ?? $appointmentData['user_email'] ?? '';
+                if (empty($studentEmail)) {
+                    // Fallback: get student email from users table
+                    $db = \Config\Database::connect();
+                    $student = $db->table('users')->select('email')->where('user_id', $appointmentData['student_id'])->get()->getRowArray();
+                    $studentEmail = $student['email'] ?? '';
+                }
+                $emailSent = $emailService->sendFeedbackNotification($studentEmail, [
+                    'student_name' => $this->getStudentName($appointmentData['student_id']),
+                    'counselor_name' => $counselorInfo['name'],
+                    'appointment_date' => date('F j, Y', strtotime($appointmentData['preferred_date'])),
+                    'appointment_time' => $appointmentData['preferred_time'],
+                    'feedback_link' => base_url('student/feedback?appointment_id=' . $appointmentData['id'])
+                ]);
             } else {
                 log_message('error', 'Invalid action type for email notification: ' . $actionType);
                 return;
@@ -550,6 +591,8 @@ class Appointments extends BaseController
                 if ($rejectionReason) {
                     $message .= " Reason: {$rejectionReason}.";
                 }
+            } elseif ($status === 'completed' || $status === 'feedback_pending') {
+                $message = "Your appointment on {$date} at {$time} with Counselor {$counselorName} has been completed. Please provide feedback to help us improve our services.";
             }
             
             $notificationData = [
@@ -822,4 +865,31 @@ class Appointments extends BaseController
             ], 500);
         }
     }
-}
+
+    /**
+     * Get student name by student ID
+     *
+     * @param string $studentId
+     * @return string
+     */
+    private function getStudentName(string $studentId): string
+    {
+        try {
+            $db = \Config\Database::connect();
+            $result = $db->table('student_personal_info')
+                ->select('first_name, last_name')
+                ->where('student_id', $studentId)
+                ->get()
+                ->getRowArray();
+
+            if ($result && !empty($result['first_name']) && !empty($result['last_name'])) {
+                return trim($result['last_name'] . ', ' . $result['first_name']);
+            }
+
+            return $studentId; // Fallback to student ID if name not found
+        } catch (\Exception $e) {
+            log_message('error', 'Error getting student name: ' . $e->getMessage());
+            return $studentId; // Fallback to student ID on error
+        }
+    }
+}   

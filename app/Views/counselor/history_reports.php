@@ -38,6 +38,10 @@
                     <i class="fas fa-calendar-alt"></i>
                     <span class="sidebar-text">Scheduled Appointments</span>
                 </a>
+                <a href="<?= base_url('counselor/pending-feedback') ?>" class="sidebar-link" title="Pending Feedback">
+                    <i class="fas fa-star"></i>
+                    <span class="sidebar-text">Pending Feedback</span>
+                </a>
                 <a href="<?= base_url('counselor/follow-up') ?>" class="sidebar-link" title="Follow-up Sessions">
                     <i class="fas fa-clipboard-list"></i>
                     <span class="sidebar-text">Follow-up Sessions</span>
@@ -187,13 +191,13 @@
                         </div>
                     </div>
                     <div class="col-md-2">
-                        <div class="stat-card cancelled">
-                            <div class="stat-icon">
-                                <i class="fas fa-ban"></i>
+                        <div class="stat-card feedback-pending">
+                            <div class="stat-icon bg-info text-white rounded-circle">
+                                <i class="fas fa-star"></i>
                             </div>
                             <div class="stat-details">
-                                <h3 id="cancelledCount">0</h3>
-                                <p>Cancelled</p>
+                                <h3 id="feedbackPendingCount">0</h3>
+                                <p>Feedback Pending</p>
                             </div>
                         </div>
                     </div>

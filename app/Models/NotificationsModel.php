@@ -105,32 +105,34 @@ class NotificationsModel extends Model
     }
 
     /**
-     * Delete a single notification instead of marking as read
+     * Mark a single notification as read
      * 
-     * @param int $notificationId Notification ID to delete
+     * @param int $notificationId Notification ID to mark as read
      * @param string $userId User ID to verify ownership
-     * @return bool True if deleted, false otherwise
+     * @return bool True if marked as read, false otherwise
      */
     public function markAsRead($notificationId, $userId)
     {
-        // Delete the notification instead of marking as read
+        // Mark the notification as read instead of deleting
         return $this->where('id', $notificationId)
                     ->where('user_id', $userId)
-                    ->delete();
+                    ->set('is_read', 1)
+                    ->update();
     }
 
     /**
-     * Delete all notifications for a user instead of marking as read
-     * Deletes notifications from notifications table and marks events/announcements as read in notification_reads
+     * Mark all notifications for a user as read
+     * Marks notifications as read in notifications table and marks events/announcements as read in notification_reads
      * 
      * @param string $userId User ID
      * @return bool True on success
      */
     public function markAllAsRead($userId)
     {
-        // Delete all notifications in notifications table (appointments, follow-up sessions, etc.)
+        // Mark all notifications as read instead of deleting
         $this->where('user_id', $userId)
-             ->delete();
+             ->set('is_read', 1)
+             ->update();
         
         // Mark all events and announcements as read using the EXACT same logic as getRecentNotifications()
         // This ensures we mark exactly what is currently visible in the notifications popup

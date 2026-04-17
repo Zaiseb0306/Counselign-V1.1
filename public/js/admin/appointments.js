@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const approvedCountEl = document.getElementById('approvedCount');
     const completedCountEl = document.getElementById('completedCount');
     const rescheduledCountEl = document.getElementById('rescheduledCount');
-    const cancelledCountEl = document.getElementById('cancelledCount');
+    const feedbackPendingCountEl = document.getElementById('feedbackPendingCount');
     
     // Global variable to store appointments data
     let appointments = [];
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
         approvedCountEl.textContent = '-';
         completedCountEl.textContent = '-';
         rescheduledCountEl.textContent = '-';
-        cancelledCountEl.textContent = '-';
+        feedbackPendingCountEl.textContent = '-';
     }
     
     // Update status count cards
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
             approved: 0,
             completed: 0,
             rescheduled: 0,
-            cancelled: 0
+            feedback_pending: 0
         };
         
         // Count each status
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
         animateCount(approvedCountEl, counts.approved);
         animateCount(completedCountEl, counts.completed);
         animateCount(rescheduledCountEl, counts.rescheduled);
-        animateCount(cancelledCountEl, counts.cancelled);
+        animateCount(feedbackPendingCountEl, counts.feedback_pending);
     }
     
     // Animate counting for better visual effect
@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Filter appointments based on selected filters
         const filteredAppointments = appointmentsData.filter(app => {
             const statusMatch = selectedStatus === 'all' || app.status === selectedStatus;
-            const dateMatch = isDateInRange(app.preferred_date, selectedDateRange);
+            const dateMatch = isDateInRange(app.appointed_date, selectedDateRange);
             return statusMatch && dateMatch;
         });
         
@@ -284,8 +284,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p class="student-id mb-0">Student ID: ${appointment.student_id}</p>
                 <span class="badge ${getStatusBadgeClass(appointment.status)}">${capitalizeFirstLetter(appointment.status)}</span>
             </div>
-            <p class="date-time mb-1">Appointment Date: ${formatDate(appointment.preferred_date)}</p>
-            <p class="date-time mb-0">Time: ${appointment.preferred_time}</p>
+            <p class="date-time mb-1">Appointment Date: ${formatDate(appointment.appointed_date)}</p>
+            <p class="date-time mb-0">Time: ${appointment.appointed_time}</p>
             <p class="timestamp text-muted mt-2 mb-0" style="font-size: 0.8rem;">${timeLabel}${formatDateTime(timestamp)}</p>
             <hr class="my-2">
             <button class="btn btn-sm btn-outline-primary view-details-btn w-100" data-id="${appointment.id}">
@@ -337,10 +337,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (modalStudentName) modalStudentName.textContent = appointment.student_name || appointment.username || 'N/A';
         
         const modalDate = modal.querySelector('#modalDate');
-        if (modalDate) modalDate.textContent = formatDate(appointment.preferred_date) || 'N/A';
+        if (modalDate) modalDate.textContent = formatDate(appointment.appointed_date) || 'N/A';
         
         const modalTime = modal.querySelector('#modalTime');
-        if (modalTime) modalTime.textContent = appointment.preferred_time || 'N/A';
+        if (modalTime) modalTime.textContent = appointment.appointed_time || 'N/A';
         
         // Consultation Type: Individual Consultation or Group Consultation
         const modalConsultationType = modal.querySelector('#modalConsultationType');
@@ -386,7 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalReason = modal.querySelector('#modalReason');
         
         if (modalReasonContainer && modalReason) {
-            if (appointment.status === 'cancelled' || appointment.status === 'rejected') {
+            if (appointment.status === 'feedback_pending' || appointment.status === 'rejected') {
                 modalReasonContainer.style.display = 'block';
                 modalReason.textContent = appointment.reason || 'No reason provided.';
             } else {
@@ -520,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     default:
                         statusClass = 'bg-secondary';
                         statusIcon = 'info-circle';
-                        statusText = 'Cancelled';
+                        statusText = 'Feedback Pending';
                         break;
                     case 'rescheduled':
                         statusClass = 'bg-warning';
@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const now = new Date();
         
         return appointments.filter(appointment => {
-            const appointmentDate = new Date(appointment.preferred_date);
+            const appointmentDate = new Date(appointment.appointed_date);
             const meetsDateFilter = (() => {
                 switch(dateFilter) {
                     case 'all':

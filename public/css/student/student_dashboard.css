@@ -2624,6 +2624,7 @@ footer {
 
     .event-description {
         font-size: 13px;
+        line-clamp: 2;
         -webkit-line-clamp: 2;
     }
 
@@ -2654,6 +2655,7 @@ footer {
 
     .event-description {
         font-size: 13px;
+        line-clamp: 2;
         -webkit-line-clamp: 2;
     }
 

@@ -194,8 +194,13 @@
     }
     ?>
 
+    <?php
+    $exportTimestamp = date('F d, Y g:i A');
+    ?>
+
     <!-- Print Controls -->
     <div class="print-controls">
+        <span class="export-timestamp">Generated: <?= $exportTimestamp ?></span>
         <button onclick="downloadPDF()" class="btn-download">📥 Download as PDF</button>
     </div>
 

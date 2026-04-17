@@ -93,6 +93,13 @@ body {
     background-color: #218838;
 }
 
+.export-timestamp {
+    font-size: 12px;
+    color: #666;
+    align-self: center;
+    white-space: nowrap;
+}
+
 /* Page Container */
 .pds-page {
     width: 8.5in;

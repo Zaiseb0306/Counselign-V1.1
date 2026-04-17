@@ -36,6 +36,10 @@
                     <i class="fas fa-calendar-alt"></i>
                     <span class="sidebar-text">Scheduled Appointments</span>
                 </a>
+                <a href="<?= base_url('counselor/pending-feedback') ?>" class="sidebar-link" title="Pending Feedback">
+                    <i class="fas fa-star"></i>
+                    <span class="sidebar-text">Pending Feedback</span>
+                </a>
                 <a href="<?= base_url('counselor/follow-up') ?>" class="sidebar-link" title="Follow-up Sessions">
                     <i class="fas fa-clipboard-list"></i>
                     <span class="sidebar-text">Follow-up Sessions</span>

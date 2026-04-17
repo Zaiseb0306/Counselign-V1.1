@@ -347,14 +347,9 @@ document.addEventListener("DOMContentLoaded", function () {
     displayAppointments(rescheduledAppointments, "rescheduledAppointmentsTable");
 
     const completedAppointments = allAppointments.filter(
-      (app) => app.status && app.status.toUpperCase() === "COMPLETED"
+      (app) => app.status && (app.status.toUpperCase() === "COMPLETED" || app.status.toUpperCase() === "FEEDBACK_PENDING")
     );
     displayAppointments(completedAppointments, "completedAppointmentsTable");
-
-    const cancelledAppointments = allAppointments.filter(
-      (app) => app.status && app.status.toUpperCase() === "CANCELLED"
-    );
-    displayAppointments(cancelledAppointments, "cancelledAppointmentsTable");
   }
 
   async function fetchCounselors() {
@@ -735,7 +730,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const showReason = [
       "allAppointmentsTable",
       "rejectedAppointmentsTable",
-      "cancelledAppointmentsTable",
     ].includes(targetTableId);
 
     if (!appointments || appointments.length === 0) {
@@ -756,7 +750,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td>${appointment.counselor_name || "Not assigned"}</td>
                 <td><span class="badge badge-${getStatusClass(
                   appointment.status
-                )}">${appointment.status || "PENDING"}</span></td>
+                )}">${appointment.status || "PENDING"}</span>${
+                  appointment.status && appointment.status.toUpperCase() === "FEEDBACK_PENDING"
+                    ? ` <a href="${window.BASE_URL || "/"}student/feedback?appointment_id=${appointment.id}" class="btn btn-sm btn-primary ms-2"><i class="fas fa-comment"></i> Provide Feedback</a>`
+                    : ""
+                }</td>
                 ${
                   showReason
                     ? `<td>${appointment.reason ? appointment.reason : ""}</td>`
@@ -868,10 +866,6 @@ document.addEventListener("DOMContentLoaded", function () {
         status = "COMPLETED";
         targetTableId = "completedAppointmentsTable";
         break;
-      case "cancelled":
-        status = "CANCELLED";
-        targetTableId = "cancelledAppointmentsTable";
-        break;
       case "all":
       default:
         status = "all";
@@ -922,10 +916,6 @@ document.addEventListener("DOMContentLoaded", function () {
         case "completed":
           status = "COMPLETED";
           targetTableId = "completedAppointmentsTable";
-          break;
-        case "cancelled":
-          status = "CANCELLED";
-          targetTableId = "cancelledAppointmentsTable";
           break;
         case "all":
         default:
@@ -1261,8 +1251,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return "rescheduled";
       case "COMPLETED":
         return "completed";
-      case "CANCELLED":
-        return "cancelled";
       case "PENDING":
       default:
         return "pending";

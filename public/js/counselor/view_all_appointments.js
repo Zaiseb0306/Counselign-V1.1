@@ -61,15 +61,15 @@ function initializeCharts() {
                     data: []
                 },
                 {
-                    label: 'Cancelled',
-                    borderColor: '#6c757d',
-                    backgroundColor: '#6c757d',
+                    label: 'Feedback Pending',
+                    borderColor: '#17a2b8',
+                    backgroundColor: '#17a2b8',
                     fill: false,
                     tension: 0.4,
                     data: []
                 }
-            ]
-        },
+            ] // <-- CHANGE THIS: Added closing bracket for datasets array
+        }, // <-- CHANGE THIS: Added closing brace for data object and comma
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -112,10 +112,10 @@ function initializeCharts() {
     pieChart = new Chart(pieCtx, {
         type: 'doughnut',
         data: {
-            labels: ['Completed', 'Approved', 'Rescheduled', 'Pending', 'Cancelled'],
+            labels: ['Completed', 'Approved', 'Rescheduled', 'Pending', 'Feedback Pending'],
             datasets: [{
                 data: [0, 0, 0, 0, 0],
-                backgroundColor: ['#0d6efd', '#198754', '#FF8000', '#ffc107', '#6c757d'],
+                backgroundColor: ['#0d6efd', '#198754', '#FF8000', '#ffc107', '#17a2b8'],
                 borderWidth: 0,
                 cutout: '65%'
             }]
@@ -140,7 +140,6 @@ function initializeCharts() {
         }
     });
 }
-
 function updateReports() {
     const timeRange = document.getElementById('timeRange').value;
 
@@ -247,12 +246,12 @@ function updateCharts(data) {
     trendChart.data.datasets[2].data = timeRange === 'monthly' ?
         (data.monthlyRescheduled || Array(12).fill(0)) :
         (data.rescheduled || Array(labels.length).fill(0));
-    trendChart.data.datasets[3].data = timeRange === 'monthly' ? 
-        (data.monthlyPending || Array(12).fill(0)) : 
+    trendChart.data.datasets[3].data = timeRange === 'monthly' ?
+        (data.monthlyPending || Array(12).fill(0)) :
         (data.pending || Array(labels.length).fill(0));
-    trendChart.data.datasets[4].data = timeRange === 'monthly' ? 
-        (data.monthlyCancelled || Array(12).fill(0)) : 
-        (data.cancelled || Array(labels.length).fill(0));
+    trendChart.data.datasets[4].data = timeRange === 'monthly' ?
+        (data.monthlyFeedbackPending || Array(12).fill(0)) :
+        (data.feedback_pending || Array(labels.length).fill(0));
 
     // Update chart title
     let titleText = `Appointment Trends - ${timeRange.charAt(0).toUpperCase() + timeRange.slice(1)} Report`;
@@ -355,7 +354,7 @@ function updateCharts(data) {
         parseInt(data.totalApproved) || 0,
         parseInt(data.totalRescheduled) || 0,
         parseInt(data.totalPending) || 0,
-        parseInt(data.totalCancelled) || 0
+        parseInt(data.totalFeedbackPending) || 0
     ];
     pieChart.data.datasets[0].data = pieData;
 
@@ -376,7 +375,7 @@ function updateStatistics(data) {
     document.getElementById('approvedCount').textContent = parseInt(data.totalApproved) || 0;
     document.getElementById('rescheduledCount').textContent = parseInt(data.totalRescheduled) || 0;
     document.getElementById('pendingCount').textContent = parseInt(data.totalPending) || 0;
-    document.getElementById('cancelledCount').textContent = parseInt(data.totalCancelled) || 0;
+    document.getElementById('feedbackPendingCount').textContent = parseInt(data.totalFeedbackPending) || 0;
 }
 
 function updateCounselorName(data) {
@@ -391,14 +390,14 @@ function resetStatistics() {
     document.getElementById('approvedCount').textContent = '0';
     document.getElementById('rescheduledCount').textContent = '0';
     document.getElementById('pendingCount').textContent = '0';
-    document.getElementById('cancelledCount').textContent = '0';
-    
+    document.getElementById('feedbackPendingCount').textContent = '0';
+
     // Reset charts
     if (trendChart && pieChart) {
         trendChart.data.labels = [];
         trendChart.data.datasets.forEach(dataset => dataset.data = []);
         trendChart.update();
-        
+
         pieChart.data.datasets[0].data = [0, 0, 0, 0, 0];
         pieChart.update();
     }
@@ -460,7 +459,7 @@ function saveToHistory(reportData) {
         dateGenerated: new Date().toISOString(),
         reportType: document.getElementById('timeRange').value,
         totalAppointments: reportData.totalCompleted + reportData.totalApproved +
-                         reportData.totalRescheduled + reportData.totalPending + reportData.totalCancelled,
+                         reportData.totalRescheduled + reportData.totalPending,
         data: reportData
     };
     
@@ -502,25 +501,123 @@ function deleteReport(reportId) {
     }
 }
 
+// Main appointments management code (only one DOMContentLoaded)
 document.addEventListener('DOMContentLoaded', function () {
     // Initialize variables
     let allAppointments = [];
-    const appointmentsTable = document.getElementById('appointmentsTable');
     const searchInput = document.getElementById('searchInput');
     const dateFilter = document.getElementById('dateFilter');
     const loadingSpinner = document.querySelector('.loading-spinner');
     const emptyState = document.querySelector('.empty-state');
+    
+    // Get modal elements
+    const exportFiltersModalEl = document.getElementById('exportFiltersModal');
+    const exportFiltersModal = exportFiltersModalEl ? new bootstrap.Modal(exportFiltersModalEl) : null;
+
+    // Utility functions
+    function getStatusClass(status) {
+        if (!status) return 'pending';
+        switch (status.toUpperCase()) {
+            case 'APPROVED':
+                return 'approved';
+            case 'REJECTED':
+                return 'rejected';
+            case 'COMPLETED':
+                return 'completed';
+            case 'FEEDBACK_PENDING':
+                return 'feedback-pending';
+            case 'PENDING':
+            default:
+                return 'pending';
+        }
+    }
+
+    function formatReason(reason) {
+        if (!reason) return '';
+        const idx = reason.indexOf(':');
+        if (idx === -1) return reason;
+        // Split at the first colon and insert a <br>
+        return reason.slice(0, idx + 1) + '<br>' + reason.slice(idx + 1).trim();
+    }
+
+    function getFeedbackStatus(appointment) {
+        if (appointment.status === 'completed') {
+            if (appointment.feedback_status === 'submitted') {
+                return '<span class="badge bg-success">Feedback Submitted</span>';
+            } else {
+                return '<span class="badge bg-warning">Feedback Pending</span>';
+            }
+        }
+        return '';
+    }
+
+    function calculateFeedbackMean(appointment) {
+        if (appointment.feedback_status !== 'submitted') {
+            return null;
+        }
+
+        const feedbackQuestions = [
+            'q1_ease_of_use', 'q2_satisfaction', 'q3_timeliness',
+            'q4_information_clarity', 'q5_staff_helpfulness', 'q6_technology_reliability',
+            'q7_privacy_confidence', 'q8_recommendation', 'q9_overall_experience',
+            'q10_future_use'
+        ];
+
+        let sum = 0;
+        let count = 0;
+
+        feedbackQuestions.forEach(question => {
+            const value = appointment[question];
+            if (value !== null && value !== undefined && value !== '') {
+                sum += parseFloat(value);
+                count++;
+            }
+        });
+
+        return count > 0 ? sum / count : null;
+    }
+
+    function getInterpretation(mean) {
+        if (mean === null) {
+            return '';
+        }
+
+        if (mean >= 4.50 && mean <= 5.00) {
+            return 'Excellent';
+        } else if (mean >= 3.50 && mean < 4.50) {
+            return 'Very Good';
+        } else if (mean >= 2.50 && mean < 3.50) {
+            return 'Good';
+        } else if (mean >= 1.50 && mean < 2.50) {
+            return 'Fair';
+        } else if (mean >= 1.00 && mean < 1.50) {
+            return 'Poor';
+        } else {
+            return '';
+        }
+    }
+
+    function getFeedbackStatusText(appointment) {
+        if (appointment.status === 'completed') {
+            if (appointment.feedback_status === 'submitted') {
+                return 'Feedback Submitted';
+            } else {
+                return 'Feedback Pending';
+            }
+        }
+        return 'N/A';
+    }
 
     // Fetch all appointments when the page loads
     fetchAppointments();
 
     // Add event listeners
-    if (searchInput) searchInput.addEventListener('input', filterAppointments);
-    if (dateFilter) dateFilter.addEventListener('change', filterAppointments);
+    if (searchInput) searchInput.addEventListener("input", filterAppointments);
+    if (dateFilter) dateFilter.addEventListener("change", filterAppointments);
 
     // Add event listeners for tab changes
-    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-        tab.addEventListener('shown.bs.tab', handleTabChange);
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach((tab) => {
+        tab.addEventListener("shown.bs.tab", handleTabChange);
     });
 
     // Export buttons
@@ -538,8 +635,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Enhanced filter elements
-    const exportFiltersModalEl = document.getElementById('exportFiltersModal');
-    const exportFiltersModal = exportFiltersModalEl ? new bootstrap.Modal(exportFiltersModalEl) : null;
     const exportStartDate = document.getElementById('exportStartDate');
     const exportEndDate = document.getElementById('exportEndDate');
     const exportStudentFilter = document.getElementById('exportStudentFilter');
@@ -558,25 +653,25 @@ document.addEventListener('DOMContentLoaded', function () {
     loadFilterData();
 
     function displayAppointments(appointments, targetTableId = 'allAppointmentsTable') {
+        // Determine if this table should show the reason column
+        const showReason = [
+            'allAppointmentsTable',
+            'rejectedAppointmentsTable'
+        ].includes(targetTableId);
+
         const tableBody = document.getElementById(targetTableId);
         if (!tableBody) {
             console.error(`Table body with ID ${targetTableId} not found`);
             return;
         }
-        
+
         tableBody.innerHTML = '';
-    
+
         if (!appointments || appointments.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="10" class="text-center">No appointments found</td></tr>';
+            const colspan = showReason ? 17 : 16;
+            tableBody.innerHTML = `<tr><td colspan="${colspan}" class="text-center">No appointments found</td></tr>`;
             return;
         }
-
-        // Determine if this table should show the reason column
-        const showReason = [
-            'allAppointmentsTable',
-            'rejectedAppointmentsTable',
-            'cancelledAppointmentsTable'
-        ].includes(targetTableId);
     
         // Sort appointments from oldest to newest
         const sortedAppointments = [...appointments].sort((a, b) => {
@@ -590,6 +685,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         sortedAppointments.forEach(appointment => {
             const row = document.createElement('tr');
+            const feedbackMean = calculateFeedbackMean(appointment);
+            const interpretation = getInterpretation(feedbackMean);
             row.innerHTML = `
                 <td>${appointment.user_id || ''}</td>
                 <td>${appointment.student_name || ''}</td>
@@ -598,21 +695,39 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${appointment.method_type || ''}</td>
                 <td>${appointment.consultation_type || 'Individual Consultation'}</td>
                 <td>${appointment.appointment_type || (appointment.record_kind === 'follow_up' ? 'Follow-up Session' : 'First Session') || ''}</td>
-                <td>${appointment.purpose || 'N/A'}</td>
+                <td>${appointment.purpose || ''}</td>
+                <td>${appointment.description ? '<button class="btn btn-sm btn-info" onclick="viewStudentConcern(\'' + encodeURIComponent(JSON.stringify(appointment)) + '\')"><i class="fas fa-eye"></i></button>' : ''}</td>
+                <td>${appointment.counselor_remarks ? '<button class="btn btn-sm btn-info" onclick="viewCounselorRemarks(\'' + encodeURIComponent(JSON.stringify(appointment)) + '\')"><i class="fas fa-eye"></i></button>' : ''}</td>
+                <td>${appointment.counselor_name || ''}</td>
+                <td>${getFeedbackStatus(appointment)}</td>
+                <td>${feedbackMean !== null ? feedbackMean.toFixed(2) : ''}</td>
+                <td>${interpretation || ''}</td>
                 <td><span class="badge badge-${getStatusClass(appointment.status)}">${appointment.status || 'PENDING'}</span></td>
-                ${showReason ? `<td>${formatReason(appointment.reason)}</td>` : ''}
+                ${showReason ? `<td>${appointment.reason ? '<button class="btn btn-sm btn-info" onclick="viewReasonForStatus(\'' + encodeURIComponent(JSON.stringify(appointment)) + '\')"><i class="fas fa-eye"></i></button>' : ''}</td>` : ''}
             `;
             tableBody.appendChild(row);
         });
+
+        // Add total summary row at the bottom
+        if (sortedAppointments.length > 0) {
+            const totalRow = document.createElement('tr');
+            totalRow.className = 'table-info fw-bold';
+            totalRow.innerHTML = `
+                <td colspan="${showReason ? 15 : 14}" class="text-end">Total Appointments:</td>
+                <td>${sortedAppointments.length}</td>
+                ${showReason ? '<td></td>' : ''}
+            `;
+            tableBody.appendChild(totalRow);
+        }
     }
 
     // Handle tab changes
     function handleTabChange(event) {
         const targetTabId = event.target.getAttribute('data-bs-target').replace('#', '');
-        
+
         let status;
         let targetTableId;
-        
+
         switch (targetTabId) {
             case 'approved':
                 status = 'APPROVED';
@@ -626,13 +741,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 status = 'COMPLETED';
                 targetTableId = 'completedAppointmentsTable';
                 break;
-            case 'cancelled':
-                status = 'CANCELLED';
-                targetTableId = 'cancelledAppointmentsTable';
-                break;
             case 'followup':
                 status = 'FOLLOWUP';
                 targetTableId = 'followUpAppointmentsTable';
+                break;
+            case 'rescheduled':
+                status = 'RESCHEDULED';
+                targetTableId = 'rescheduledAppointmentsTable';
+                break;
+            case 'feedback-pending':
+                status = 'FEEDBACK_PENDING';
+                targetTableId = 'feedbackPendingAppointmentsTable';
                 break;
             case 'all':
             default:
@@ -644,42 +763,49 @@ document.addEventListener('DOMContentLoaded', function () {
         if (status === 'all') {
             filteredAppointments = allAppointments;
         } else if (status === 'FOLLOWUP') {
-            // Follow-up tab shows follow-up sessions that are pending, completed, or cancelled
-            filteredAppointments = allAppointments.filter(app => (app.record_kind === 'follow_up') && (app.status && ['PENDING','COMPLETED','CANCELLED'].includes(app.status.toUpperCase())));
+            // Follow-up tab shows follow-up sessions that are pending or completed
+            filteredAppointments = allAppointments.filter(app => (app.record_kind === 'follow_up') && (app.status && ['PENDING','COMPLETED'].includes(app.status.toUpperCase())));
         } else {
             filteredAppointments = allAppointments.filter(app => app.status && app.status.toUpperCase() === status);
         }
 
-        SecureLogger.info(`Tab changed to ${targetTabId}, filtering ${status} appointments. Found: ${filteredAppointments.length}`);
+        console.log(`Tab changed to ${targetTabId}, filtering ${status} appointments. Found: ${filteredAppointments.length}`);
         displayAppointments(filteredAppointments, targetTableId);
     }
 
     // Update initial display after fetch
-    function updateInitialDisplay() {
-        SecureLogger.info('Updating initial display for all tabs');
-        
+    function updateInitialDisplay(followUps = []) {
+        console.log('Updating initial display for all tabs');
+
         // Display all appointments first
         displayAppointments(allAppointments, 'allAppointmentsTable');
-        
+
         // Pre-filter and display appointments for each status tab
         const approvedAppointments = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'APPROVED');
-        SecureLogger.info(`Found ${approvedAppointments.length} approved appointments`);
+        console.log(`Found ${approvedAppointments.length} approved appointments`);
         displayAppointments(approvedAppointments, 'approvedAppointmentsTable');
-        
-        const rejectedAppointments = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'REJECTED');
-        SecureLogger.info(`Found ${rejectedAppointments.length} rejected appointments`);
-        displayAppointments(rejectedAppointments, 'rejectedAppointmentsTable');
-        
-        const completedAppointments = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'COMPLETED');
-        SecureLogger.info(`Found ${completedAppointments.length} completed appointments`);
-        displayAppointments(completedAppointments, 'completedAppointmentsTable');
-        
-        const cancelledAppointments = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'CANCELLED');
-        SecureLogger.info(`Found ${cancelledAppointments.length} cancelled appointments`);
-        displayAppointments(cancelledAppointments, 'cancelledAppointmentsTable');
 
-        const followUpAppointments = allAppointments.filter(app => (app.record_kind === 'follow_up') && (app.status && ['PENDING','COMPLETED','CANCELLED'].includes(app.status.toUpperCase())));
-        SecureLogger.info(`Found ${followUpAppointments.length} follow-up appointments (completed/cancelled)`);
+        const rejectedAppointments = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'REJECTED');
+        console.log(`Found ${rejectedAppointments.length} rejected appointments`);
+        displayAppointments(rejectedAppointments, 'rejectedAppointmentsTable');
+
+        const completedAppointments = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'COMPLETED');
+        console.log(`Found ${completedAppointments.length} completed appointments`);
+        displayAppointments(completedAppointments, 'completedAppointmentsTable');
+
+        const rescheduledAppointments = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'RESCHEDULED');
+        console.log(`Found ${rescheduledAppointments.length} rescheduled appointments`);
+        displayAppointments(rescheduledAppointments, 'rescheduledAppointmentsTable');
+
+        const feedbackPendingAppointments = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'FEEDBACK_PENDING');
+        console.log(`Found ${feedbackPendingAppointments.length} feedback pending appointments`);
+        displayAppointments(feedbackPendingAppointments, 'feedbackPendingAppointmentsTable');
+
+        const followUpAppointments = followUps.filter(app => {
+            const st = (app.status || '').toString().toUpperCase();
+            return st === 'PENDING' || st === 'COMPLETED';
+        });
+        console.log(`Found ${followUpAppointments.length} follow-up appointments`);
         displayAppointments(followUpAppointments, 'followUpAppointmentsTable');
     }
 
@@ -704,25 +830,31 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const data = await response.json();
             
-            SecureLogger.info('Full API Response:', data);
+            console.log('Full API Response:', data);
             
             if (data.success) {
                 allAppointments = data.appointments;
-                SecureLogger.info('Appointments received:', allAppointments);
-                SecureLogger.info('Number of appointments:', allAppointments.length);
+                const followUps = data.followUps || [];
+                
+                // Merge follow-ups into allAppointments for filtering purposes
+                allAppointments = [...allAppointments, ...followUps];
+                
+                console.log('Appointments received:', data.appointments);
+                console.log('Follow-ups received:', followUps);
+                console.log('Merged appointments for filtering:', allAppointments);
+                console.log('Number of appointments:', allAppointments.length);
                 
                 // Log first appointment to see structure
                 if (allAppointments.length > 0) {
-                    SecureLogger.info('First appointment structure:', allAppointments[0]);
+                    console.log('First appointment structure:', allAppointments[0]);
                 }
                 
                 // Check if we have appointments with these statuses
-                SecureLogger.info('APPROVED appointments:', allAppointments.filter(app => app.status && app.status.toUpperCase() === 'APPROVED').length);
-                SecureLogger.info('REJECTED appointments:', allAppointments.filter(app => app.status && app.status.toUpperCase() === 'REJECTED').length);
-                SecureLogger.info('COMPLETED appointments:', allAppointments.filter(app => app.status && app.status.toUpperCase() === 'COMPLETED').length);
-                SecureLogger.info('CANCELLED appointments:', allAppointments.filter(app => app.status && app.status.toUpperCase() === 'CANCELLED').length);
+                console.log('APPROVED appointments:', allAppointments.filter(app => app.status && app.status.toUpperCase() === 'APPROVED').length);
+                console.log('REJECTED appointments:', allAppointments.filter(app => app.status && app.status.toUpperCase() === 'REJECTED').length);
+                console.log('COMPLETED appointments:', allAppointments.filter(app => app.status && app.status.toUpperCase() === 'COMPLETED').length);
                 
-                updateInitialDisplay(); // Update all tables initially
+                updateInitialDisplay(followUps); // Update all tables initially
                 
                 if (allAppointments.length === 0) {
                     showEmptyState();
@@ -781,10 +913,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     status = 'COMPLETED';
                     targetTableId = 'completedAppointmentsTable';
                     break;
-                case 'cancelled-tab':
-                    status = 'CANCELLED';
-                    targetTableId = 'cancelledAppointmentsTable';
-                    break;
                 case 'followup-tab':
                     status = 'FOLLOWUP';
                     targetTableId = 'followUpAppointmentsTable';
@@ -796,7 +924,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             
             if (status === 'FOLLOWUP') {
-                filtered = filtered.filter(app => (app.record_kind === 'follow_up') && (app.status && ['PENDING','COMPLETED','CANCELLED'].includes(app.status.toUpperCase())));
+                filtered = filtered.filter(app => (app.record_kind === 'follow_up') && (app.status && ['PENDING','COMPLETED'].includes(app.status.toUpperCase())));
             } else if (status !== 'all') {
                 filtered = filtered.filter(app => app.status && app.status.toUpperCase() === status);
             }
@@ -808,13 +936,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Enhanced filter functions
-    function showExportFiltersModal(event) {
-        const sourceId = (event && event.currentTarget && event.currentTarget.id) ? event.currentTarget.id : (event && event.target && event.target.id) ? event.target.id : '';
-        const exportType = sourceId === 'exportPDF' ? 'PDF' : 'Excel';
-        if (exportFiltersModalEl) exportFiltersModalEl.setAttribute('data-export-type', exportType);
-        if (exportFiltersModal) exportFiltersModal.show();
-    }
-
     function clearDateRange() {
         if (exportStartDate) exportStartDate.value = '';
         if (exportEndDate) exportEndDate.value = '';
@@ -973,7 +1094,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const activeTab = document.querySelector('.nav-link.active');
         if (activeTab) {
             const tabId = activeTab.getAttribute('data-bs-target').replace('#', '');
-            const statusMap = { all: 'All', approved: 'Approved', rejected: 'Rejected', completed: 'Completed', cancelled: 'Cancelled' };
+            const statusMap = { all: 'All', approved: 'Approved', rejected: 'Rejected', completed: 'Completed' };
             parts.push(`Status: ${statusMap[tabId] || 'All'}`);
         }
         if (filters.startDate) parts.push(`Start: ${formatDateForTitle(filters.startDate)}`);
@@ -988,33 +1109,260 @@ document.addEventListener('DOMContentLoaded', function () {
         return parts.join(' | ');
     }
 
-// Export to PDF 
-async function exportToPDF(filters = {}) {
-    try {
-        if (typeof window.jspdf === 'undefined') {
-            throw new Error('jsPDF is not loaded');
-        }
+    // Export to PDF 
+    async function exportToPDF(filters = {}) {
+        try {
+            if (typeof window.jspdf === 'undefined') {
+                throw new Error('jsPDF is not loaded');
+            }
 
-        const doc = new window.jspdf.jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-
-        if (typeof doc.autoTable !== 'function') {
-            await new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js';
-                script.onload = resolve;
-                script.onerror = () => reject(new Error('Failed to load autoTable plugin'));
-                document.head.appendChild(script);
+            const doc = new window.jspdf.jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
             });
 
             if (typeof doc.autoTable !== 'function') {
-                throw new Error('AutoTable plugin could not be initialized');
-            }
-        }
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js';
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error('Failed to load autoTable plugin'));
+                    document.head.appendChild(script);
+                });
 
+                if (typeof doc.autoTable !== 'function') {
+                    throw new Error('AutoTable plugin could not be initialized');
+                }
+            }
+
+            // Get current active tab
+            const activeTab = document.querySelector('.nav-link.active');
+            
+            // Get appointments based on active tab
+            let appointmentsToExport = [...allAppointments];
+            let reportTitle = 'All Consultation Records';
+            
+            if (activeTab) {
+                const tabId = activeTab.getAttribute('data-bs-target').replace('#', '');
+                switch (tabId) {
+                    case 'approved':
+                        appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'APPROVED');
+                        reportTitle = 'Approved Consultation Records';
+                        break;
+                    case 'rejected':
+                        appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'REJECTED');
+                        reportTitle = 'Rejected Consultation Records';
+                        break;
+                    case 'completed':
+                        appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'COMPLETED');
+                        reportTitle = 'Completed Consultation Records';
+                        break;
+                    case 'rescheduled':
+                        appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'RESCHEDULED');
+                        reportTitle = 'Rescheduled Consultation Records';
+                        break;
+                    case 'followup':
+                        // Filter for follow-up appointments only
+                        appointmentsToExport = allAppointments.filter(app => {
+                            const isFollowUp = (app.record_kind === 'follow_up') || 
+                                             (app.appointment_type && String(app.appointment_type).toLowerCase().includes('follow-up'));
+                            const st = (app.status || '').toString().toUpperCase();
+                            return isFollowUp && (st === 'PENDING' || st === 'COMPLETED');
+                        });
+                        reportTitle = 'Follow-up Consultation Records';
+                        break;
+                }
+            }
+
+            // Apply enhanced filters
+            const filteredResult = applyEnhancedFilters(appointmentsToExport, filters, reportTitle);
+            reportTitle = filteredResult.reportTitle || reportTitle;
+            appointmentsToExport = filteredResult.appointments || appointmentsToExport;
+
+            // Sort appointments from oldest to newest
+            appointmentsToExport.sort((a, b) => {
+                const dateTimeA = a.appointed_date + ' ' + a.appointed_time;
+                const dateTimeB = b.appointed_date + ' ' + b.appointed_time;
+                return dateTimeA < dateTimeB ? -1 : dateTimeA > dateTimeB ? 1 : 0;
+            });
+
+            // Add header with logo
+            const logoImg = new Image();
+            logoImg.src = (window.BASE_URL || '/') + 'Photos/ticket_logo_blue.png';
+            
+            await new Promise((resolve, reject) => {
+                logoImg.onload = resolve;
+                logoImg.onerror = reject;
+            });
+
+            // Add logo
+            doc.addImage(logoImg, 'PNG', 12, 10, 20, 15);
+
+            // Add header text
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Counselign: USTP Guidance Counseling Sanctuary', 37, 17);
+
+            // Add horizontal line
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.5);
+            doc.line(12, 27, doc.internal.pageSize.getWidth() - 12, 27);
+
+            // Add report title
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const titleWidth = doc.getStringUnitWidth(reportTitle) * doc.internal.getFontSize() / doc.internal.scaleFactor;
+            const titleX = (pageWidth - titleWidth) / 2;
+            doc.text(reportTitle, titleX, 35);
+            
+            // Only include Status column for "All Consultation Records"
+            const isAllRecords = reportTitle === 'All Consultation Records';
+            const tableHeaders = isAllRecords
+                ? ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Student Feedbacks', 'Mean', 'Interpretation', 'Status']
+                : ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Student Feedbacks', 'Mean', 'Interpretation'];
+            
+            const tableData = appointmentsToExport.map(app => {
+                const appointmentType = app.appointment_type || (app.record_kind === 'follow_up' ? 'Follow-up' : 'First Session');
+                const feedbackMean = calculateFeedbackMean(app);
+                const interpretation = getInterpretation(feedbackMean);
+                const baseData = [
+                    (app.student_id || app.user_id || ''),
+                    app.student_name || '',
+                    formatDate(app.appointed_date) || '',
+                    app.appointed_time || '',
+                    app.method_type || '',
+                    app.consultation_type || 'Individual Consultation',
+                    appointmentType,
+                    app.purpose || 'N/A',
+                    app.counselor_name || '',
+                    getFeedbackStatusText(app),
+                    feedbackMean !== null ? feedbackMean.toFixed(2) : 'N/A',
+                    interpretation || 'N/A'
+                ];
+
+                if (isAllRecords) {
+                    baseData.push(app.status ? String(app.status).toLowerCase() : '');
+                }
+
+                return baseData;
+            });
+
+            // Create table configuration
+            const tableConfig = {
+                startY: 40,
+                head: [tableHeaders],
+                body: tableData,
+                margin: { top: 40, bottom: 25, left: 12, right: 12 },
+                tableWidth: 'wrap',
+                styles: {
+                    fontSize: 7,
+                    cellPadding: 1.5,
+                    overflow: 'linebreak',
+                    cellWidth: 'wrap'
+                },
+                headStyles: {
+                    fillColor: [0, 51, 102],
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    fontSize: 7
+                },
+                alternateRowStyles: {
+                    fillColor: [245, 245, 245]
+                },
+                columnStyles: isAllRecords ? {
+                    0: { cellWidth: 14 },  // User ID
+                    1: { cellWidth: 22 },  // Full Name
+                    2: { cellWidth: 12 },  // Date
+                    3: { cellWidth: 14 },  // Time
+                    4: { cellWidth: 12 },  // Method Type
+                    5: { cellWidth: 17 },  // Consultation Type
+                    6: { cellWidth: 13 },  // Session
+                    7: { cellWidth: 20 },  // Purpose
+                    8: { cellWidth: 18 },  // Counselor
+                    9: { cellWidth: 18 },  // Student Feedbacks
+                    10: { cellWidth: 10 },  // Mean
+                    11: { cellWidth: 12 },  // Interpretation
+                    12: { cellWidth: 12 },  // Status
+                } : {
+                    0: { cellWidth: 15 },  // User ID
+                    1: { cellWidth: 24 },  // Full Name
+                    2: { cellWidth: 13 },  // Date
+                    3: { cellWidth: 15 },  // Time
+                    4: { cellWidth: 13 },  // Method Type
+                    5: { cellWidth: 19 },  // Consultation Type
+                    6: { cellWidth: 14 },  // Session
+                    7: { cellWidth: 22 },  // Purpose
+                    8: { cellWidth: 20 },  // Counselor
+                    9: { cellWidth: 19 },  // Student Feedbacks
+                    10: { cellWidth: 11 },  // Mean
+                    11: { cellWidth: 13 },  // Interpretation
+                },
+                didDrawPage: function(data) {
+                    // Add header
+                    doc.addImage(logoImg, 'PNG', 12, 10, 20, 15);
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Counselign: USTP Guidance Counseling Sanctuary', 37, 17);
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(0.5);
+                    doc.line(12, 27, doc.internal.pageSize.getWidth() - 12, 27);
+
+                    // Footer
+                    const pageHeight = doc.internal.pageSize.getHeight();
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    const margin = 12;
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setLineWidth(0.3);
+                    doc.line(margin, pageHeight - 22, pageWidth - margin, pageHeight - 22);
+
+                    doc.setFontSize(7);
+                    doc.setFont('helvetica', 'normal');
+
+                    const leftText = 'Confidential Document';
+                    const centerText = 'Prepared by the University Guidance Counseling Office';
+                    const currentDate = new Date();
+                    const dateStr = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeStr = currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    const rightText = `Generated: ${dateStr} | ${timeStr} PST | Page ${data.pageNumber}`;
+
+                    const y = pageHeight - 17;
+                    doc.text(leftText, margin, y, { align: 'left' });
+                    doc.text(centerText, pageWidth / 2, y, { align: 'center' });
+                    doc.text(rightText, pageWidth - margin, y, { align: 'right' });
+
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'normal');
+                }
+            };
+
+            // Generate table
+            doc.autoTable(tableConfig);
+
+            // Footer: list filter summary
+            try {
+                const filterSummary = buildFilterSummary(filters);
+                const pageWidth2 = doc.internal.pageSize.getWidth();
+                const footerY2 = doc.internal.pageSize.getHeight() - 10;
+                doc.setFontSize(8);
+                doc.text(filterSummary || 'No additional filters applied', pageWidth2 / 2, footerY2, { align: 'center' });
+            } catch (e) {
+                console.warn('Failed to render export footer:', e);
+            }
+
+            // Generate filename and save
+            const today = new Date().toISOString().split('T')[0];
+            const filename = `${reportTitle.toLowerCase().replace(/\s+/g, '_')}_${today}.pdf`;
+            doc.save(filename);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Error generating PDF. Please try again. Error: ' + error.message);
+        }
+    }
+
+    // Export to Excel
+    function exportToExcel(filters = {}) {
         // Get current active tab
         const activeTab = document.querySelector('.nav-link.active');
         
@@ -1037,9 +1385,9 @@ async function exportToPDF(filters = {}) {
                     appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'COMPLETED');
                     reportTitle = 'Completed Consultation Records';
                     break;
-                case 'cancelled':
-                    appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'CANCELLED');
-                    reportTitle = 'Cancelled Consultation Records';
+                case 'rescheduled':
+                    appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'RESCHEDULED');
+                    reportTitle = 'Rescheduled Consultation Records';
                     break;
                 case 'followup':
                     // Filter for follow-up appointments only
@@ -1047,7 +1395,7 @@ async function exportToPDF(filters = {}) {
                         const isFollowUp = (app.record_kind === 'follow_up') || 
                                          (app.appointment_type && String(app.appointment_type).toLowerCase().includes('follow-up'));
                         const st = (app.status || '').toString().toUpperCase();
-                        return isFollowUp && (st === 'PENDING' || st === 'COMPLETED' || st === 'CANCELLED');
+                        return isFollowUp && (st === 'PENDING' || st === 'COMPLETED');
                     });
                     reportTitle = 'Follow-up Consultation Records';
                     break;
@@ -1055,9 +1403,9 @@ async function exportToPDF(filters = {}) {
         }
 
         // Apply enhanced filters
-        appointmentsToExport = applyEnhancedFilters(appointmentsToExport, filters, reportTitle);
-        reportTitle = appointmentsToExport.reportTitle || reportTitle;
-        appointmentsToExport = appointmentsToExport.appointments || appointmentsToExport;
+        const filteredResult = applyEnhancedFilters(appointmentsToExport, filters, reportTitle);
+        reportTitle = filteredResult.reportTitle || reportTitle;
+        appointmentsToExport = filteredResult.appointments || appointmentsToExport;
 
         // Sort appointments from oldest to newest
         appointmentsToExport.sort((a, b) => {
@@ -1066,306 +1414,90 @@ async function exportToPDF(filters = {}) {
             return dateTimeA < dateTimeB ? -1 : dateTimeA > dateTimeB ? 1 : 0;
         });
 
-        // Add header with logo
-        const logoImg = new Image();
-        logoImg.src = (window.BASE_URL || '/') + 'Photos/ticket_logo_blue.png';
+        // Determine if we need to show "Reason for Status" column
+        const showReason = reportTitle.includes('Rejected') || reportTitle.includes('All');
+
+        // Prepare the data with headers
+        const headerRow = showReason 
+            ? ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Status', 'Reason for Status']
+            : ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Status'];
         
-        await new Promise((resolve, reject) => {
-            logoImg.onload = resolve;
-            logoImg.onerror = reject;
-        });
+        const filterSummary = buildFilterSummary(filters) || 'No additional filters applied';
+        const excelData = [
+            [reportTitle],              // Title row
+            [filterSummary],            // Filters summary row
+            [],                         // Empty row for spacing
+            headerRow                   // Headers
+        ];
 
-        // Add logo
-        doc.addImage(logoImg, 'PNG', 12, 10, 20, 15);
-
-        // Add header text
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Counselign: USTP Guidance Counseling Sanctuary', 37, 17);
-
-        // Add horizontal line
-        doc.setDrawColor(0, 0, 0);
-        doc.setLineWidth(0.5);
-        doc.line(12, 27, doc.internal.pageSize.getWidth() - 12, 27);
-
-        // Add report title
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const titleWidth = doc.getStringUnitWidth(reportTitle) * doc.internal.getFontSize() / doc.internal.scaleFactor;
-        const titleX = (pageWidth - titleWidth) / 2;
-        doc.text(reportTitle, titleX, 35);
-        
-        // Define table headers
-        const tableHeaders = ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Status'];
-        
-        const tableData = appointmentsToExport.map(app => {
-            const appointmentType = app.appointment_type || (app.record_kind === 'follow_up' ? 'Follow-up' : 'First Session');
+        // Add the appointment data
+        appointmentsToExport.forEach(app => {
+            const appointmentType = app.appointment_type || (app.record_kind === 'follow_up' ? 'Follow-up Session' : 'First Session');
             const baseData = [
                 (app.student_id || app.user_id || ''),
                 app.student_name || '',
-                formatDate(app.appointed_date) || '',
-                app.appointed_time || '',
-                app.method_type || '',
+                formatDate(app.appointed_date),
+                app.appointed_time,
+                app.method_type,
                 app.consultation_type || 'Individual Consultation',
                 appointmentType,
                 app.purpose || 'N/A',
-                app.counselor_name || '',
+                app.counselor_name,
                 (app.status ? String(app.status).toLowerCase() : '')
             ];
             
-            return baseData;
+            if (showReason) {
+                baseData.push(app.reason || '');
+            }
+            
+            excelData.push(baseData);
         });
 
-        // Create table configuration
-        const tableConfig = {
-            startY: 40,
-            head: [tableHeaders],
-            body: tableData,
-            margin: { top: 40, bottom: 25, left: 12, right: 12 },
-            tableWidth: 'wrap',
-            styles: {
-                fontSize: 7,
-                cellPadding: 1.5,
-                overflow: 'linebreak',
-                cellWidth: 'wrap'
-            },
-            headStyles: {
-                fillColor: [0, 51, 102],
-                textColor: [255, 255, 255],
-                fontStyle: 'bold',
-                fontSize: 7
-            },
-            alternateRowStyles: {
-                fillColor: [245, 245, 245]
-            },
-            columnStyles: {
-                0: { cellWidth: 17 },  // User ID
-                1: { cellWidth: 26 },  // Full Name
-                2: { cellWidth: 14 },  // Date
-                3: { cellWidth: 16 },  // Time
-                4: { cellWidth: 14 },  // Method Type
-                5: { cellWidth: 20 },  // Consultation Type
-                6: { cellWidth: 16 },  // Session
-                7: { cellWidth: 24 },  // Purpose
-                8: { cellWidth: 22 },  // Counselor
-                9: { cellWidth: 15 },  // Status
-            },
-            didDrawPage: function(data) {
-                // Add header
-                doc.addImage(logoImg, 'PNG', 12, 10, 20, 15);
-                doc.setFontSize(12);
-                doc.setFont('helvetica', 'bold');
-                doc.text('Counselign: USTP Guidance Counseling Sanctuary', 37, 17);
-                doc.setDrawColor(0, 0, 0);
-                doc.setLineWidth(0.5);
-                doc.line(12, 27, doc.internal.pageSize.getWidth() - 12, 27);
+        // Create a new workbook and worksheet
+        const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.aoa_to_sheet(excelData);
 
-                // Footer
-                const pageHeight = doc.internal.pageSize.getHeight();
-                const pageWidth = doc.internal.pageSize.getWidth();
-                const margin = 12;
-                doc.setDrawColor(0, 0, 0);
-                doc.setLineWidth(0.3);
-                doc.line(margin, pageHeight - 22, pageWidth - margin, pageHeight - 22);
-
-                doc.setFontSize(7);
-                doc.setFont('helvetica', 'normal');
-
-                const leftText = 'Confidential Document';
-                const centerText = 'Prepared by the University Guidance Counseling Office';
-                const currentDate = new Date();
-                const dateStr = currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                const timeStr = currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-                const rightText = `Generated: ${dateStr} | ${timeStr} PST | Page ${data.pageNumber}`;
-
-                const y = pageHeight - 17;
-                doc.text(leftText, margin, y, { align: 'left' });
-                doc.text(centerText, pageWidth / 2, y, { align: 'center' });
-                doc.text(rightText, pageWidth - margin, y, { align: 'right' });
-
-                doc.setFontSize(10);
-                doc.setFont('helvetica', 'normal');
-            }
-        };
-
-        // Generate table
-        doc.autoTable(tableConfig);
-
-        // Footer: list filter summary
-        try {
-            const filterSummary = buildFilterSummary(filters);
-            const pageWidth2 = doc.internal.pageSize.getWidth();
-            const footerY2 = doc.internal.pageSize.getHeight() - 10;
-            doc.setFontSize(8);
-            doc.text(filterSummary || 'No additional filters applied', pageWidth2 / 2, footerY2, { align: 'center' });
-        } catch (e) {
-            console.warn('Failed to render export footer:', e);
-        }
-
-        // Generate filename and save
-        const today = new Date().toISOString().split('T')[0];
-        const filename = `${reportTitle.toLowerCase().replace(/\s+/g, '_')}_${today}.pdf`;
-        doc.save(filename);
-    } catch (error) {
-        console.error('Error generating PDF:', error);
-        alert('Error generating PDF. Please try again. Error: ' + error.message);
-    }
-}
-
-// Export to Excel
-function exportToExcel(filters = {}) {
-    // Get current active tab
-    const activeTab = document.querySelector('.nav-link.active');
-    
-    // Get appointments based on active tab
-    let appointmentsToExport = [...allAppointments];
-    let reportTitle = 'All Consultation Records';
-    
-    if (activeTab) {
-        const tabId = activeTab.getAttribute('data-bs-target').replace('#', '');
-        switch (tabId) {
-            case 'approved':
-                appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'APPROVED');
-                reportTitle = 'Approved Consultation Records';
-                break;
-            case 'rejected':
-                appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'REJECTED');
-                reportTitle = 'Rejected Consultation Records';
-                break;
-            case 'completed':
-                appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'COMPLETED');
-                reportTitle = 'Completed Consultation Records';
-                break;
-            case 'cancelled':
-                appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'CANCELLED');
-                reportTitle = 'Cancelled Consultation Records';
-                break;
-            case 'followup':
-                // Filter for follow-up appointments only
-                appointmentsToExport = allAppointments.filter(app => {
-                    const isFollowUp = (app.record_kind === 'follow_up') || 
-                                     (app.appointment_type && String(app.appointment_type).toLowerCase().includes('follow-up'));
-                    const st = (app.status || '').toString().toUpperCase();
-                    return isFollowUp && (st === 'PENDING' || st === 'COMPLETED' || st === 'CANCELLED');
-                });
-                reportTitle = 'Follow-up Consultation Records';
-                break;
-        }
-    }
-
-    // Apply enhanced filters
-    appointmentsToExport = applyEnhancedFilters(appointmentsToExport, filters, reportTitle);
-    reportTitle = appointmentsToExport.reportTitle || reportTitle;
-    appointmentsToExport = appointmentsToExport.appointments || appointmentsToExport;
-
-    // Sort appointments from oldest to newest
-    appointmentsToExport.sort((a, b) => {
-        const dateTimeA = a.appointed_date + ' ' + a.appointed_time;
-        const dateTimeB = b.appointed_date + ' ' + b.appointed_time;
-        return dateTimeA < dateTimeB ? -1 : dateTimeA > dateTimeB ? 1 : 0;
-    });
-
-    // Determine if we need to show "Reason for Status" column
-    const showReason = reportTitle.includes('Rejected') || reportTitle.includes('Cancelled') || reportTitle.includes('All');
-
-    // Prepare the data with headers
-    const headerRow = showReason 
-        ? ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Status', 'Reason for Status']
-        : ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Status'];
-    
-    const filterSummary = buildFilterSummary(filters) || 'No additional filters applied';
-    const excelData = [
-        [reportTitle],              // Title row
-        [filterSummary],            // Filters summary row
-        [],                         // Empty row for spacing
-        headerRow                   // Headers
-    ];
-
-    // Add the appointment data
-    appointmentsToExport.forEach(app => {
-        const appointmentType = app.appointment_type || (app.record_kind === 'follow_up' ? 'Follow-up Session' : 'First Session');
-        const baseData = [
-            (app.student_id || app.user_id || ''),
-            app.student_name || '',
-            formatDate(app.appointed_date),
-            app.appointed_time,
-            app.method_type,
-            app.consultation_type || 'Individual Consultation',
-            appointmentType,
-            app.purpose || 'N/A',
-            app.counselor_name,
-            (app.status ? String(app.status).toLowerCase() : '')
+        // Set column widths
+        const cols = [
+            { wch: 12 },    // User ID
+            { wch: 25 },    // Full Name
+            { wch: 12 },    // Date
+            { wch: 15 },    // Time
+            { wch: 15 },    // Method Type
+            { wch: 22 },    // Consultation Type
+            { wch: 18 },    // Session
+            { wch: 30 },    // Purpose
+            { wch: 25 },    // Counselor
+            { wch: 12 },    // Status
+            ...(showReason ? [{ wch: 40 }] : []) // Reason (if shown)
         ];
-        
-        if (showReason) {
-            baseData.push(app.reason || '');
-        }
-        
-        excelData.push(baseData);
-    });
+        worksheet['!cols'] = cols;
 
-    // Create a new workbook and worksheet
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+        // Set title merge
+        const mergeEnd = showReason ? 10 : 9;
+        worksheet['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: mergeEnd } }
+        ];
 
-    // Set column widths
-    const cols = [
-        { wch: 12 },    // User ID
-        { wch: 25 },    // Full Name
-        { wch: 12 },    // Date
-        { wch: 15 },    // Time
-        { wch: 15 },    // Method Type
-        { wch: 22 },    // Consultation Type
-        { wch: 18 },    // Session
-        { wch: 30 },    // Purpose
-        { wch: 25 },    // Counselor
-        { wch: 12 },    // Status
-        ...(showReason ? [{ wch: 40 }] : []) // Reason (if shown)
-    ];
-    worksheet['!cols'] = cols;
-
-    // Set title merge
-    const mergeEnd = showReason ? 10 : 9;
-    worksheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: mergeEnd } }
-    ];
-
-    // Apply styles: title (row 1), headers (row 4), and Status column
-    (function applyExcelStyles(){
-        // Helper to get A1 reference
-        function addr(r, c) {
-            return XLSX.utils.encode_cell({ r: r - 1, c }); // convert to 0-based
-        }
-        // Title: row 1, col 1
-        const titleCellRef = addr(1, 0);
-        if (!worksheet[titleCellRef]) worksheet[titleCellRef] = { t: 's', v: reportTitle };
-        worksheet[titleCellRef].s = {
-            font: { bold: true, sz: 14 },
-            alignment: { horizontal: 'center' }
-        };
-
-        // Header row is row 4 (after title, filter summary, and empty row)
-        const headerRow = 4;
-        const totalCols = mergeEnd + 1;
-        for (let c = 0; c < totalCols; c++) {
-            const ref = addr(headerRow, c);
-            if (worksheet[ref]) {
-                worksheet[ref].s = Object.assign({}, worksheet[ref].s || {}, {
-                    font: { bold: true },
-                    alignment: { horizontal: 'center' }
-                });
+        // Apply styles: title (row 1), headers (row 4), and Status column
+        (function applyExcelStyles(){
+            // Helper to get A1 reference
+            function addr(r, c) {
+                return XLSX.utils.encode_cell({ r: r - 1, c }); // convert to 0-based
             }
-        }
+            // Title: row 1, col 1
+            const titleCellRef = addr(1, 0);
+            if (!worksheet[titleCellRef]) worksheet[titleCellRef] = { t: 's', v: reportTitle };
+            worksheet[titleCellRef].s = {
+                font: { bold: true, sz: 14 },
+                alignment: { horizontal: 'center' }
+            };
 
-        // Make Status column bold and centered
-        const headerLabels = showReason 
-            ? ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Session', 'Purpose', 'Counselor', 'Status', 'Reason for Status']
-            : ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Session', 'Purpose', 'Counselor', 'Status'];
-        const statusColIdx = headerLabels.indexOf('Status');
-        if (statusColIdx >= 0) {
-            for (let r = headerRow + 1; r < excelData.length + 1; r++) { // data rows start after header
-                const ref = addr(r, statusColIdx);
+            // Header row is row 4 (after title, filter summary, and empty row)
+            const headerRow = 4;
+            const totalCols = mergeEnd + 1;
+            for (let c = 0; c < totalCols; c++) {
+                const ref = addr(headerRow, c);
                 if (worksheet[ref]) {
                     worksheet[ref].s = Object.assign({}, worksheet[ref].s || {}, {
                         font: { bold: true },
@@ -1373,17 +1505,33 @@ function exportToExcel(filters = {}) {
                     });
                 }
             }
-        }
-    })();
 
-    // Add the worksheet to the workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Appointments');
+            // Make Status column bold and centered
+            const headerLabels = showReason 
+                ? ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Session', 'Purpose', 'Counselor', 'Status', 'Reason for Status']
+                : ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Session', 'Purpose', 'Counselor', 'Status'];
+            const statusColIdx = headerLabels.indexOf('Status');
+            if (statusColIdx >= 0) {
+                for (let r = headerRow + 1; r < excelData.length + 1; r++) { // data rows start after header
+                    const ref = addr(r, statusColIdx);
+                    if (worksheet[ref]) {
+                        worksheet[ref].s = Object.assign({}, worksheet[ref].s || {}, {
+                            font: { bold: true },
+                            alignment: { horizontal: 'center' }
+                        });
+                    }
+                }
+            }
+        })();
 
-    // Generate filename and save
-    const today = new Date().toISOString().split('T')[0];
-    const filename = `${reportTitle.toLowerCase().replace(/\s+/g, '_')}_${today}.xlsx`;
-    XLSX.writeFile(workbook, filename);
-}
+        // Add the worksheet to the workbook
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Appointments');
+
+        // Generate filename and save
+        const today = new Date().toISOString().split('T')[0];
+        const filename = `${reportTitle.toLowerCase().replace(/\s+/g, '_')}_${today}.xlsx`;
+        XLSX.writeFile(workbook, filename);
+    }
 
     // View appointment details
     window.viewDetails = function (appointmentId) {
@@ -1428,45 +1576,30 @@ function exportToExcel(filters = {}) {
         });
     }
 
-    function getStatusClass(status) {
-        if (!status) return 'pending';
-        switch (status.toUpperCase()) {
-            case 'APPROVED':
-                return 'approved';
-            case 'REJECTED':
-                return 'rejected';
-            case 'COMPLETED':
-                return 'completed';
-            case 'CANCELLED':
-                return 'cancelled';
-            case 'PENDING':
-            default:
-                return 'pending';
-        }
-    }
+
 
     // Show loading state
     function showLoading() {
         if (loadingSpinner) loadingSpinner.style.display = 'flex';
-        if (appointmentsTable) appointmentsTable.style.display = 'none';
+        document.querySelectorAll('.table-responsive').forEach(el => el.style.display = 'none');
     }
 
     // Hide loading state
     function hideLoading() {
         if (loadingSpinner) loadingSpinner.style.display = 'none';
-        if (appointmentsTable) appointmentsTable.style.display = 'table';
+        document.querySelectorAll('.table-responsive').forEach(el => el.style.display = 'block');
     }
 
     // Show empty state
     function showEmptyState() {
         if (emptyState) emptyState.style.display = 'block';
-        if (appointmentsTable) appointmentsTable.style.display = 'none';
+        document.querySelectorAll('.table-responsive').forEach(el => el.style.display = 'none');
     }
 
     // Hide empty state
     function hideEmptyState() {
         if (emptyState) emptyState.style.display = 'none';
-        if (appointmentsTable) appointmentsTable.style.display = 'table';
+        document.querySelectorAll('.table-responsive').forEach(el => el.style.display = 'block');
     }
 
     function showError(message) {
@@ -1474,20 +1607,48 @@ function exportToExcel(filters = {}) {
         alert(message);
     }
 
-    function formatReason(reason) {
-        if (!reason) return '';
-        const idx = reason.indexOf(':');
-        if (idx === -1) return reason;
-        // Split at the first colon and insert a <br>
-        return reason.slice(0, idx + 1) + '<br>' + reason.slice(idx + 1).trim();
-    }
+
 
     function formatDateForTitle(dateString) {
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
         });
     }
 });
+
+// Global functions for viewing details
+function viewStudentConcern(encodedAppointment) {
+    const appointment = JSON.parse(decodeURIComponent(encodedAppointment));
+    document.getElementById('modalStudentName').textContent = appointment.student_name || 'N/A';
+    document.getElementById('modalDateTime').textContent = `${appointment.appointed_date ? new Date(appointment.appointed_date).toLocaleDateString() : 'N/A'} at ${appointment.appointed_time || 'N/A'}`;
+    document.getElementById('modalDetails').textContent = appointment.description || 'No student concern available';
+    document.getElementById('viewDetailsModalLabel').innerHTML = '<i class="fas fa-user me-2"></i>Student Concern';
+    const modal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+    modal.show();
+}
+
+function viewCounselorRemarks(encodedAppointment) {
+    const appointment = JSON.parse(decodeURIComponent(encodedAppointment));
+    document.getElementById('modalStudentName').textContent = appointment.student_name || 'N/A';
+    document.getElementById('modalDateTime').textContent = `${appointment.appointed_date ? new Date(appointment.appointed_date).toLocaleDateString() : 'N/A'} at ${appointment.appointed_time || 'N/A'}`;
+    document.getElementById('modalDetails').textContent = appointment.counselor_remarks || 'No counselor remarks available';
+    document.getElementById('viewDetailsModalLabel').innerHTML = '<i class="fas fa-comment-dots me-2"></i>Counselor Remarks';
+    const modal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+    modal.show();
+}
+
+function viewReasonForStatus(encodedAppointment) {
+    const appointment = JSON.parse(decodeURIComponent(encodedAppointment));
+    document.getElementById('modalStudentName').textContent = appointment.student_name || 'N/A';
+    document.getElementById('modalDateTime').textContent = `${appointment.appointed_date ? new Date(appointment.appointed_date).toLocaleDateString() : 'N/A'} at ${appointment.appointed_time || 'N/A'}`;
+    document.getElementById('modalDetails').textContent = appointment.reason || 'No reason for status available';
+    document.getElementById('viewDetailsModalLabel').innerHTML = '<i class="fas fa-info-circle me-2"></i>Reason for Status';
+    const modal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+    modal.show();
+}
+
+
+

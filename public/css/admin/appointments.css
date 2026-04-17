@@ -231,6 +231,10 @@ main {
     background-color: #0066cc; /* Blue for completed */
 }
 
+.appointment-card.feedback_pending::before {
+    background-color: #0dcaf0; /* Info blue for feedback pending */
+}
+
 /* Hover effect */
 .appointment-card:hover {
     transform: translateY(-2px);
@@ -608,6 +612,10 @@ footer {
 
 .status-rejected .timestamp {
     border-top-color: #dc3545;
+}
+
+.status-feedback_pending .timestamp {
+    border-top-color: #0dcaf0;
 }
 
 .modal-footer .alert {

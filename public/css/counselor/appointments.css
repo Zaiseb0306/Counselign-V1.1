@@ -156,7 +156,7 @@ main {
 .appointments-list {
     padding: 1rem;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
     position: relative;
     contain: layout style; /* Optimize rendering without affecting paint */
@@ -437,7 +437,7 @@ footer {
     }
     
     .appointments-list {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 

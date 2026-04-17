@@ -74,7 +74,7 @@ class HistoryReports extends Controller
             $firstDay = new \DateTime($month . '-01');
             $lastDay = clone $firstDay; $lastDay->modify('last day of this month');
 
-            $labels = []; $completed = []; $approved = []; $rescheduled = []; $pending = []; $cancelled = [];
+            $labels = []; $completed = []; $approved = []; $rescheduled = []; $pending = []; $cancelled = []; $feedback_pending = [];
 
             // Counselor filtering condition - matches the pattern from GetAllAppointments controller
             $counselorFilter = " AND (appointments.counselor_preference = " . $this->db->escape($counselor_id) . " OR appointments.counselor_preference IS NULL)";
@@ -87,6 +87,7 @@ class HistoryReports extends Controller
                         SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
                         SUM(CASE WHEN status = 'rescheduled' THEN 1 ELSE 0 END) as rescheduled,
                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as feedback_pending,
                         SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
                     FROM appointments
                     WHERE preferred_date BETWEEN ? AND ?" . $counselorFilter . "
@@ -101,6 +102,7 @@ class HistoryReports extends Controller
                     $approved[] = (int)$row->approved;
                     $rescheduled[] = (int)$row->rescheduled;
                     $pending[] = (int)$row->pending;
+                    $feedback_pending[] = (int)$row->feedback_pending;
                     $cancelled[] = (int)$row->cancelled;
                 }
 
@@ -128,6 +130,11 @@ class HistoryReports extends Controller
                 $firstMonday = clone $firstDay; $dayOfWeek = $firstMonday->format('N');
                 if ($dayOfWeek > 1) { $firstMonday->modify('-' . ($dayOfWeek - 1) . ' days'); }
                 $lastSunday = clone $lastDay; if ($lastSunday->format('N') != 7) { $lastSunday->modify('next sunday'); }
+                // Limit to today to exclude future dates
+                $today = new \DateTime();
+                if ($lastSunday > $today) {
+                    $lastSunday = $today;
+                }
 
                 $query = $this->db->query(
                     "SELECT
@@ -136,6 +143,7 @@ class HistoryReports extends Controller
                         SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
                         SUM(CASE WHEN status = 'rescheduled' THEN 1 ELSE 0 END) as rescheduled,
                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as feedback_pending,
                         SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
                     FROM appointments
                     WHERE preferred_date BETWEEN ? AND ?" . $counselorFilter . "
@@ -151,6 +159,7 @@ class HistoryReports extends Controller
                     $approved[] = (int)$row->approved;
                     $rescheduled[] = (int)$row->rescheduled;
                     $pending[] = (int)$row->pending;
+                    $feedback_pending[] = (int)$row->feedback_pending;
                     $cancelled[] = (int)$row->cancelled;
                     // compute actual monday for index mapping
                     $y = substr($row->week, 0, 4);
@@ -185,6 +194,7 @@ class HistoryReports extends Controller
                         SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
                         SUM(CASE WHEN status = 'rescheduled' THEN 1 ELSE 0 END) as rescheduled,
                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as feedback_pending,
                         SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
                     FROM appointments
                     WHERE YEAR(preferred_date) BETWEEN 2023 AND YEAR(CURDATE())" . $counselorFilter . "
@@ -198,6 +208,7 @@ class HistoryReports extends Controller
                     $approved[] = (int)$row->approved;
                     $rescheduled[] = (int)$row->rescheduled;
                     $pending[] = (int)$row->pending;
+                    $feedback_pending[] = (int)$row->feedback_pending;
                     $cancelled[] = (int)$row->cancelled;
                 }
 
@@ -228,6 +239,7 @@ class HistoryReports extends Controller
                         SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
                         SUM(CASE WHEN status = 'rescheduled' THEN 1 ELSE 0 END) as rescheduled,
                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                        SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as feedback_pending,
                         SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
                     FROM appointments
                     WHERE YEAR(preferred_date) = ?" . $counselorFilter . "
@@ -242,6 +254,7 @@ class HistoryReports extends Controller
                     $approved[$row->month - 1] = (int)$row->approved;
                     $rescheduled[$row->month - 1] = (int)$row->rescheduled;
                     $pending[$row->month - 1] = (int)$row->pending;
+                    $feedback_pending[$row->month - 1] = (int)$row->feedback_pending;
                     $cancelled[$row->month - 1] = (int)$row->cancelled;
                 }
 
@@ -271,6 +284,7 @@ class HistoryReports extends Controller
                     SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as total_approved,
                     SUM(CASE WHEN status = 'rescheduled' THEN 1 ELSE 0 END) as total_rescheduled,
                     SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as total_pending,
+                    SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as total_feedback_pending,
                     SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as total_cancelled
                 FROM appointments
                 WHERE preferred_date BETWEEN ? AND ?" . $counselorFilter . "",
@@ -299,11 +313,13 @@ class HistoryReports extends Controller
                 'approved' => $approved,
                 'rescheduled' => $rescheduled,
                 'pending' => $pending,
+                'feedback_pending' => $feedback_pending,
                 'cancelled' => $cancelled,
                 'totalCompleted' => (int)$totals->total_completed,
                 'totalApproved' => (int)$totals->total_approved,
                 'totalRescheduled' => (int)$totals->total_rescheduled,
                 'totalPending' => (int)$totals->total_pending,
+                'totalFeedbackPending' => (int)$totals->total_feedback_pending,
                 'totalCancelled' => (int)$totals->total_cancelled
             ]);
         } catch (\Exception $e) {

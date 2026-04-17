@@ -195,11 +195,11 @@
                             <div class="status-card-body p-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="status-title">Cancelled</h6>
-                                        <h3 class="status-count" id="cancelledCount">-</h3>
+                                        <h6 class="status-title">Feedback Pending</h6>
+                                        <h3 class="status-count" id="feedbackPendingCount">-</h3>
                                     </div>
-                                    <div class="status-icon bg-secondary text-white rounded-circle">
-                                        <i class="fas fa-ban"></i>
+                                    <div class="status-icon bg-info text-white rounded-circle">
+                                        <i class="fas fa-star"></i>
                                     </div>
                                 </div>
                             </div>
@@ -228,7 +228,7 @@
                                 <option value="pending">Pending</option>
                                 <option value="approved">Approved</option>
                                 <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
+                                <option value="feedback_pending">Feedback Pending</option>
                             </select>
                         </div>
                     </div>

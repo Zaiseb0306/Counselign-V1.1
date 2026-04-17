@@ -570,6 +570,16 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
+  // Add see history functionality
+  const seeHistoryBtn = document.getElementById("seeHistoryBtn");
+  if (seeHistoryBtn) {
+    seeHistoryBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      window.location.href = window.BASE_URL + "student/notifications/history";
+    });
+  }
+
   // Add mark all as read functionality
   const markAllReadBtn = document.getElementById("markAllReadBtn");
   if (markAllReadBtn) {

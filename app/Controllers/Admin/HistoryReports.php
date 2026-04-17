@@ -66,7 +66,7 @@ class HistoryReports extends Controller
             $approved = [];
             $rejected = [];
             $pending = [];
-            $cancelled = [];
+            $feedback_pending = [];
             $rescheduled = [];
 
             if ($reportType === 'daily') {
@@ -77,7 +77,7 @@ class HistoryReports extends Controller
                         SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
                         SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected,
                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-                        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled,
+                        SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as feedback_pending,
                         SUM(CASE WHEN status = 'rescheduled' THEN 1 ELSE 0 END) as rescheduled
                     FROM appointments
                     WHERE preferred_date BETWEEN ? AND ?
@@ -91,18 +91,18 @@ class HistoryReports extends Controller
                     $approved[] = (int)$row->approved;
                     $rejected[] = (int)$row->rejected;
                     $pending[] = (int)$row->pending;
-                    $cancelled[] = (int)$row->cancelled;
+                    $feedback_pending[] = (int)$row->feedback_pending;
                     $rescheduled[] = (int)$row->rescheduled;
                 }
 
-                // Add follow-up sessions (pending/completed/cancelled)
+                // Add follow-up sessions (pending/completed/feedback_pending)
                 $fu = $this->db->query("
                     SELECT DATE(preferred_date) as date,
                            SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
                            0 as approved,
                            0 as rejected,
                            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-                           SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
+                           SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as feedback_pending
                     FROM follow_up_appointments
                     WHERE preferred_date BETWEEN ? AND ?
                     GROUP BY DATE(preferred_date)
@@ -119,7 +119,7 @@ class HistoryReports extends Controller
                     if ($idx === false) continue;
                     $completed[$idx] += (int)$row->completed;
                     $pending[$idx] += (int)$row->pending;
-                    $cancelled[$idx] += (int)$row->cancelled;
+                    $feedback_pending[$idx] += (int)$row->feedback_pending;
                 }
             } elseif ($reportType === 'weekly') {
                 $firstMonday = clone $firstDay;
@@ -157,7 +157,7 @@ class HistoryReports extends Controller
                         COUNT(DISTINCT CASE WHEN a.status = 'approved' THEN a.id END) as approved,
                         COUNT(DISTINCT CASE WHEN a.status = 'rejected' THEN a.id END) as rejected,
                         COUNT(DISTINCT CASE WHEN a.status = 'pending' THEN a.id END) as pending,
-                        COUNT(DISTINCT CASE WHEN a.status = 'cancelled' THEN a.id END) as cancelled,
+                        COUNT(DISTINCT CASE WHEN a.status = 'feedback_pending' THEN a.id END) as feedback_pending,
                         COUNT(DISTINCT CASE WHEN a.status = 'rescheduled' THEN a.id END) as rescheduled
                     FROM weeks w
                     LEFT JOIN appointments a ON a.preferred_date BETWEEN w.week_start AND w.week_end
@@ -179,7 +179,7 @@ class HistoryReports extends Controller
                     $approved[] = (int)$row->approved;
                     $rejected[] = (int)$row->rejected;
                     $pending[] = (int)$row->pending;
-                    $cancelled[] = (int)$row->cancelled;
+                    $feedback_pending[] = (int)$row->feedback_pending;
                     $rescheduled[] = (int)$row->rescheduled;
                     
                     $weekStarts[] = $weekStart->format('Y-m-d');
@@ -198,7 +198,7 @@ class HistoryReports extends Controller
                     $st = strtolower($fuRow['status']);
                     if ($st === 'completed') $completed[$idx]++;
                     if ($st === 'pending') $pending[$idx]++;
-                    if ($st === 'cancelled') $cancelled[$idx]++;
+                    if ($st === 'feedback_pending') $feedback_pending[$idx]++;
                 }
             } elseif ($reportType === 'yearly') {
                 // Get the selected year from the month parameter
@@ -211,7 +211,7 @@ class HistoryReports extends Controller
                         SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
                         SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected,
                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-                        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled,
+                        SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as feedback_pending,
                         SUM(CASE WHEN status = 'rescheduled' THEN 1 ELSE 0 END) as rescheduled
                     FROM appointments
                     WHERE YEAR(preferred_date) = ?
@@ -225,7 +225,7 @@ class HistoryReports extends Controller
                     $approved[] = (int)$row->approved;
                     $rejected[] = (int)$row->rejected;
                     $pending[] = (int)$row->pending;
-                    $cancelled[] = (int)$row->cancelled;
+                    $feedback_pending[] = (int)$row->feedback_pending;
                     $rescheduled[] = (int)$row->rescheduled;
                 }
 
@@ -233,7 +233,7 @@ class HistoryReports extends Controller
                 $fuYears = $this->db->query("SELECT YEAR(preferred_date) as year,
                            SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) as completed,
                            SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) as pending,
-                           SUM(CASE WHEN status='cancelled' THEN 1 ELSE 0 END) as cancelled
+                           SUM(CASE WHEN status='feedback_pending' THEN 1 ELSE 0 END) as feedback_pending
                         FROM follow_up_appointments
                         WHERE YEAR(preferred_date) = ?
                         GROUP BY YEAR(preferred_date)", [$selectedYear])->getResult();
@@ -242,7 +242,7 @@ class HistoryReports extends Controller
                     if ($idx === false) continue;
                     $completed[$idx] += (int)$row->completed;
                     $pending[$idx] += (int)$row->pending;
-                    $cancelled[$idx] += (int)$row->cancelled;
+                    $feedback_pending[$idx] += (int)$row->feedback_pending;
                 }
             } else {
                 $query = $this->db->query("
@@ -278,7 +278,7 @@ class HistoryReports extends Controller
                         SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as total_approved,
                         SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as total_rejected,
                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as total_pending,
-                        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as total_cancelled,
+                        SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as total_feedback_pending,
                         SUM(CASE WHEN status = 'rescheduled' THEN 1 ELSE 0 END) as total_rescheduled
                     FROM appointments
                     WHERE YEAR(preferred_date) = ?
@@ -291,7 +291,7 @@ class HistoryReports extends Controller
                     SELECT
                         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as total_completed,
                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as total_pending,
-                        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as total_cancelled
+                        SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as total_feedback_pending
                     FROM follow_up_appointments
                     WHERE YEAR(preferred_date) = ?
                 ", [$selectedYear])->getRow();
@@ -303,7 +303,7 @@ class HistoryReports extends Controller
                         SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as total_approved,
                         SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as total_rejected,
                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as total_pending,
-                        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as total_cancelled,
+                        SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as total_feedback_pending,
                         SUM(CASE WHEN status = 'rescheduled' THEN 1 ELSE 0 END) as total_rescheduled
                     FROM appointments
                     WHERE preferred_date BETWEEN ? AND ?
@@ -316,7 +316,7 @@ class HistoryReports extends Controller
                     SELECT
                         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as total_completed,
                         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as total_pending,
-                        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as total_cancelled
+                        SUM(CASE WHEN status = 'feedback_pending' THEN 1 ELSE 0 END) as total_feedback_pending
                     FROM follow_up_appointments
                     WHERE preferred_date BETWEEN ? AND ?
                 ", [$firstDay->format('Y-m-d'), $lastDay->format('Y-m-d')])->getRow();
@@ -324,7 +324,7 @@ class HistoryReports extends Controller
             
             $totals->total_completed += (int)($fuTotals->total_completed ?? 0);
             $totals->total_pending += (int)($fuTotals->total_pending ?? 0);
-            $totals->total_cancelled += (int)($fuTotals->total_cancelled ?? 0);
+            $totals->total_feedback_pending += (int)($fuTotals->total_feedback_pending ?? 0);
 
             return $this->response->setJSON([
                 'labels' => $labels,
@@ -332,13 +332,13 @@ class HistoryReports extends Controller
                 'approved' => $approved,
                 'rejected' => $rejected,
                 'pending' => $pending,
-                'cancelled' => $cancelled,
+                'feedback_pending' => $feedback_pending,
                 'rescheduled' => $rescheduled,
                 'totalCompleted' => (int)$totals->total_completed,
                 'totalApproved' => (int)$totals->total_approved,
                 'totalRejected' => (int)$totals->total_rejected,
                 'totalPending' => (int)$totals->total_pending,
-                'totalCancelled' => (int)$totals->total_cancelled,
+                'totalFeedbackPending' => (int)$totals->total_feedback_pending,
                 'totalRescheduled' => (int)($totals->total_rescheduled ?? 0)
             ]);
 

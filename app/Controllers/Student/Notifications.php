@@ -197,4 +197,147 @@ class Notifications extends \CodeIgniter\Controller
             return $this->failServerError('Failed to get unread count');
         }
     }
-} 
+
+    public function history()
+    {
+        if (!session()->get('logged_in') || session()->get('role') !== 'student') {
+            return redirect()->to('/');
+        }
+
+        return view('student/notification_history');
+    }
+
+    public function getHistory()
+    {
+        if (!session()->get('logged_in') || session()->get('role') !== 'student') {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Unauthorized access']);
+        }
+
+        $userId = session()->get('user_id_display');
+        if (!$userId) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'User ID not found in session']);
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            
+            // Get all notifications from notifications table
+            $query = "SELECT 
+                        n.*,
+                        CASE 
+                            WHEN n.type = 'message' THEN COALESCE(c.name, u.username, 'Counselor')
+                            ELSE ''
+                        END as sender_name
+                      FROM notifications n
+                      LEFT JOIN messages m ON n.type = 'message' AND n.related_id = m.message_id
+                      LEFT JOIN users u ON m.sender_id = u.user_id
+                      LEFT JOIN counselors c ON m.sender_id = c.counselor_id
+                      WHERE n.user_id = ?
+                      ORDER BY n.created_at DESC
+                      LIMIT 100";
+
+            $notifications = $db->query($query, [$userId])->getResultArray();
+
+            // Get read events from notification_reads
+            $readEvents = $db->table('notification_reads nr')
+                ->select('nr.related_id, nr.notification_type as type, e.title, e.date as event_date, e.time, e.location, e.created_at')
+                ->join('events e', 'e.id = nr.related_id')
+                ->where('nr.user_id', $userId)
+                ->where('nr.notification_type', 'event')
+                ->get()
+                ->getResultArray();
+
+            foreach ($readEvents as $event) {
+                $notifications[] = [
+                    'id' => null,
+                    'user_id' => $userId,
+                    'type' => 'event',
+                    'title' => 'Event: ' . $event['title'],
+                    'message' => "Event on " . date('F j, Y', strtotime($event['event_date'])) . " at " . $event['time'] . " in " . $event['location'],
+                    'related_id' => $event['related_id'],
+                    'is_read' => 1,
+                    'created_at' => $event['created_at'],
+                    'event_date' => $event['event_date']
+                ];
+            }
+
+            // Get read announcements from notification_reads
+            $readAnnouncements = $db->table('notification_reads nr')
+                ->select('nr.related_id, nr.notification_type as type, a.title, a.content, a.created_at')
+                ->join('announcements a', 'a.id = nr.related_id')
+                ->where('nr.user_id', $userId)
+                ->where('nr.notification_type', 'announcement')
+                ->get()
+                ->getResultArray();
+
+            foreach ($readAnnouncements as $announcement) {
+                $notifications[] = [
+                    'id' => null,
+                    'user_id' => $userId,
+                    'type' => 'announcement',
+                    'title' => 'Announcement: ' . $announcement['title'],
+                    'message' => substr($announcement['content'], 0, 100) . '...',
+                    'related_id' => $announcement['related_id'],
+                    'is_read' => 1,
+                    'created_at' => $announcement['created_at']
+                ];
+            }
+
+            // Sort all notifications by created_at descending
+            usort($notifications, function($a, $b) {
+                return strtotime($b['created_at']) - strtotime($a['created_at']);
+            });
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'notifications' => $notifications
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error getting notification history: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Failed to get notification history'
+            ]);
+        }
+    }
+
+    public function delete()
+    {
+        if (!session()->get('logged_in') || session()->get('role') !== 'student') {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Unauthorized access']);
+        }
+
+        $userId = session()->get('user_id_display');
+        if (!$userId) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'User ID not found in session']);
+        }
+
+        try {
+            $input = $this->request->getJSON(true);
+            $notificationId = $input['notification_id'] ?? null;
+
+            if (!$notificationId) {
+                return $this->response->setJSON(['status' => 'error', 'message' => 'Notification ID is required']);
+            }
+
+            $db = \Config\Database::connect();
+            
+            // Delete the notification if it belongs to the user
+            $db->table('notifications')
+                ->where('id', $notificationId)
+                ->where('user_id', $userId)
+                ->delete();
+
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => 'Notification deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error deleting notification: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Failed to delete notification'
+            ]);
+        }
+    }
+}

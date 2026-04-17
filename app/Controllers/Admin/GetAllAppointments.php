@@ -27,51 +27,95 @@ class GetAllAppointments extends BaseController
             'labels' => [],
             'completed' => [],
             'approved' => [],
+            'rejected' => [],
             'rescheduled' => [],
             'pending' => [],
-            'cancelled' => [],
+            'feedback_pending' => [],
             'totalCompleted' => 0,
             'totalApproved' => 0,
             'totalRescheduled' => 0,
             'totalPending' => 0,
-            'totalCancelled' => 0,
+            'totalFeedbackPending' => 0,
             'monthlyCompleted' => array_fill(0, 12, 0),
             'monthlyApproved' => array_fill(0, 12, 0),
+            'monthlyRejected' => array_fill(0, 12, 0),
             'monthlyRescheduled' => array_fill(0, 12, 0),
             'monthlyPending' => array_fill(0, 12, 0),
-            'monthlyCancelled' => array_fill(0, 12, 0)
+            'monthlyFeedbackPending' => array_fill(0, 12, 0)
         ];
 
         try {
             // Authentication check (CodeIgniter session)
             $session = session();
             if (!$session->get('logged_in') || $session->get('role') !== 'admin') {
+                log_message('error', 'GetAllAppointments: User not authenticated');
                 throw new \Exception('User not logged in');
             }
 
+            // Log the request
+            log_message('info', 'GetAllAppointments called with timeRange: ' . ($this->request->getGet('timeRange') ?? 'none'));
+
             // Get time range from request (default to 'weekly')
             $timeRange = $this->request->getGet('timeRange') ?? 'weekly';
+            log_message('info', 'Time range: ' . $timeRange);
 
             $db = \Config\Database::connect();
+            if (!$db) {
+                log_message('error', 'GetAllAppointments: Database connection failed');
+                throw new \Exception('Database connection failed');
+            }
 
-            // Base query for all appointments
+            // Simplified base query for testing
             $baseQuery = "SELECT
+                        appointments.id,
                         appointments.student_id,
-                        COALESCE(CONCAT(spi.last_name, ', ', spi.first_name), NULL) AS student_name,
+                        CASE 
+                            WHEN COALESCE(spi.first_name, '') != '' OR COALESCE(spi.last_name, '') != '' 
+                            THEN CONCAT(COALESCE(spi.first_name, ''), ' ', COALESCE(spi.last_name, ''))
+                            WHEN COALESCE(u.username, '') != ''
+                            THEN u.username
+                            ELSE appointments.student_id
+                        END as student_name,
                         appointments.preferred_date as appointed_date,
                         appointments.preferred_time as appointed_time,
                         appointments.method_type,
+                        'Individual Consultation' as consultation_type,
                         appointments.purpose,
-                        c.name as counselor_name,
+                        appointments.description,
+                        appointments.counselor_remarks,
+                        COALESCE(c.name, 'No Preference') as counselor_name,
                         appointments.status, appointments.reason,
+                        COALESCE(sf.status, 'pending') as feedback_status,
+                        sf.q1_ease_of_use,
+                        sf.q2_satisfaction,
+                        sf.q3_timeliness,
+                        sf.q4_information_clarity,
+                        sf.q5_staff_helpfulness,
+                        sf.q6_technology_reliability,
+                        sf.q7_privacy_confidence,
+                        sf.q8_recommendation,
+                        sf.q9_overall_experience,
+                        sf.q10_future_use,
                         MONTH(appointments.preferred_date) as month
                       FROM appointments
-                      LEFT JOIN counselors c ON appointments.counselor_preference = c.counselor_id
-                      LEFT JOIN student_personal_info spi ON spi.student_id = appointments.student_id";
+                      LEFT JOIN student_feedback sf ON sf.appointment_id = appointments.id
+                      LEFT JOIN student_personal_info spi ON spi.student_id = appointments.student_id
+                      LEFT JOIN users u ON appointments.student_id = u.user_id
+                      LEFT JOIN counselors c ON c.counselor_id = appointments.counselor_preference";
 
             // All appointments for the list view
             $allAppointmentsQuery = $baseQuery . " ORDER BY preferred_date ASC, preferred_time ASC";
-            $allAppointments = $db->query($allAppointmentsQuery)->getResultArray();
+            log_message('info', 'Executing all appointments query: ' . $allAppointmentsQuery);
+            try {
+                $allAppointments = $db->query($allAppointmentsQuery)->getResultArray();
+                log_message('info', 'Found ' . count($allAppointments) . ' appointments');
+            } catch (\Exception $e) {
+                log_message('error', 'GetAllAppointments: Query failed: ' . $e->getMessage());
+                throw new \Exception('Database query failed: ' . $e->getMessage());
+            }
+
+            // Add appointments to response for dashboard table display
+            $response['appointments'] = $allAppointments;
 
             // Normalize and tag base appointments
             foreach ($allAppointments as &$row) {
@@ -80,29 +124,55 @@ class GetAllAppointments extends BaseController
             }
             unset($row);
 
-            // Include completed/cancelled follow-up sessions, mapped to list schema
-            $followUpsQuery = "SELECT 
+            // Include completed/feedback_pending follow-up sessions, mapped to list schema
+            // These are kept separate and only shown in the Follow-up tab
+            $followUpsQuery = "SELECT
+                    f.id,
                     f.student_id as student_id,
-                    COALESCE(CONCAT(spi.last_name, ', ', spi.first_name), NULL) AS student_name,
+                    CASE 
+                        WHEN COALESCE(spi.first_name, '') != '' OR COALESCE(spi.last_name, '') != '' 
+                        THEN CONCAT(COALESCE(spi.first_name, ''), ' ', COALESCE(spi.last_name, ''))
+                        WHEN COALESCE(u.username, '') != ''
+                        THEN u.username
+                        ELSE f.student_id
+                    END as student_name,
                     f.preferred_date as appointed_date,
                     f.preferred_time as appointed_time,
-                    p.method_type as method_type,
+                    'Online' as method_type,
+                    'Individual Consultation' as consultation_type,
                     f.consultation_type as purpose,
-                    COALESCE(c.name, p.counselor_preference, 'No Preference') as counselor_name,
-                    UPPER(f.status) as status,
+                    f.description,
+                    COALESCE(parent.counselor_remarks, '') as counselor_remarks,
+                    COALESCE(c.name, 'No Preference') as counselor_name,
+                    LOWER(f.status) as status,
                     f.reason as reason,
+                    CASE WHEN sf.q1_ease_of_use IS NOT NULL THEN 'submitted' ELSE 'pending' END as feedback_status,
+                    sf.q1_ease_of_use,
+                    sf.q2_satisfaction,
+                    sf.q3_timeliness,
+                    sf.q4_information_clarity,
+                    sf.q5_staff_helpfulness,
+                    sf.q6_technology_reliability,
+                    sf.q7_privacy_confidence,
+                    sf.q8_recommendation,
+                    sf.q9_overall_experience,
+                    sf.q10_future_use,
                     'Follow-up Session' as appointment_type,
                     'follow_up' as record_kind
                 FROM follow_up_appointments f
-                LEFT JOIN appointments p ON p.id = f.parent_appointment_id
-                LEFT JOIN counselors c ON p.counselor_preference = c.counselor_id
+                LEFT JOIN student_feedback sf ON sf.appointment_id = f.parent_appointment_id
                 LEFT JOIN student_personal_info spi ON spi.student_id = f.student_id
-                WHERE f.status IN ('pending','completed','cancelled')
+                LEFT JOIN users u ON f.student_id = u.user_id
+                LEFT JOIN appointments parent ON parent.id = f.parent_appointment_id
+                LEFT JOIN counselors c ON c.counselor_id = f.counselor_id
+                WHERE f.status IN ('pending','completed')
                 ORDER BY f.preferred_date ASC, f.preferred_time ASC";
 
             $followUps = $db->query($followUpsQuery)->getResultArray();
 
-            $response['appointments'] = array_merge($allAppointments, $followUps);
+            // Only merge main appointments into response - follow-ups are handled separately in the Follow-up tab
+            $response['appointments'] = $allAppointments;
+            $response['followUps'] = $followUps;
 
             // Now get filtered appointments for charts
             $dateFilter = "";
@@ -112,12 +182,21 @@ class GetAllAppointments extends BaseController
             switch ($timeRange) {
                 case 'daily':
                     $currentDate = new \DateTime();
-                    $startDate = clone $currentDate;
-                    while ($startDate->format('N') != 1) { $startDate->modify('-1 day'); }
-                    $endDate = clone $startDate; $endDate->modify('+6 days');
-                    $startDateStr = $startDate->format('Y-m-d');
-                    $endDateStr = $endDate->format('Y-m-d');
-                    $dateFilter = " WHERE preferred_date >= '$startDateStr' AND preferred_date <= '$endDateStr'";
+                    $startDateStr = $currentDate->format('Y-m-d');
+                    $endDateStr = $currentDate->format('Y-m-d');
+                    $dateFilter = " WHERE preferred_date = '$startDateStr'";
+                    // Set weekInfo for daily display
+                    $response['weekInfo'] = [
+                        'startDate' => $startDateStr,
+                        'endDate' => $endDateStr,
+                        'weekDays' => []
+                    ];
+                    $response['weekInfo']['weekDays'][] = [
+                        'date' => $startDateStr,
+                        'dayName' => $currentDate->format('l'),
+                        'shortDayName' => $currentDate->format('D'),
+                        'dayMonth' => $currentDate->format('M j')
+                    ];
                     break;
                 case 'weekly':
                     $currentDate = new \DateTime();
@@ -129,6 +208,23 @@ class GetAllAppointments extends BaseController
                     $startDateStr = $startDate->format('Y-m-d');
                     $endDateStr = $endDate->format('Y-m-d');
                     $dateFilter = " WHERE preferred_date >= '$startDateStr' AND preferred_date <= '$endDateStr'";
+                    // Set weekInfo for daily/weekly display
+                    $response['weekInfo'] = [
+                        'startDate' => $startDateStr,
+                        'endDate' => $endDateStr,
+                        'weekDays' => []
+                    ];
+                    $tempDate = new \DateTime($startDateStr);
+                    $endTempDate = new \DateTime($endDateStr);
+                    while ($tempDate <= $endTempDate) {
+                        $response['weekInfo']['weekDays'][] = [
+                            'date' => $tempDate->format('Y-m-d'),
+                            'dayName' => $tempDate->format('l'),
+                            'shortDayName' => $tempDate->format('D'),
+                            'dayMonth' => $tempDate->format('M j')
+                        ];
+                        $tempDate->modify('+1 day');
+                    }
                     break;
                 case 'monthly':
                     $currentYear = date('Y');
@@ -137,14 +233,19 @@ class GetAllAppointments extends BaseController
             }
 
             $query = $baseQuery . $dateFilter . " ORDER BY preferred_date ASC, preferred_time ASC";
-            $chartAppointments = $db->query($query)->getResultArray();
+            try {
+                $chartAppointments = $db->query($query)->getResultArray();
+            } catch (\Exception $e) {
+                log_message('error', 'GetAllAppointments: Chart query failed: ' . $e->getMessage());
+                $chartAppointments = [];
+            }
 
-            // Include follow-up sessions (pending/completed/cancelled) in chart datasets
-            $fuChartQuery = "SELECT 
+            // Include all follow-up sessions in chart statistics
+            $fuChartQuery = "SELECT
                     f.preferred_date as appointed_date,
-                    UPPER(f.status) as status
+                    LOWER(f.status) as status
                 FROM follow_up_appointments f
-                WHERE f.status IN ('pending','completed','cancelled')";
+                WHERE f.status IN ('pending','completed')";
             if ($timeRange === 'monthly') {
                 $fuChartQuery .= " AND YEAR(f.preferred_date) = YEAR(CURDATE())";
             } elseif (!empty($startDateStr) && !empty($endDateStr)) {
@@ -159,7 +260,13 @@ class GetAllAppointments extends BaseController
             }
 
             // Process appointments for statistics
-            $dateFormat = ($timeRange === 'daily' || $timeRange === 'weekly') ? 'Y-m-d' : 'Y-m';
+            if ($timeRange === 'daily') {
+                $dateFormat = 'Y-m-d';
+            } elseif ($timeRange === 'weekly') {
+                $dateFormat = 'Y-m-d'; // Will be adjusted to week start in the loop
+            } else {
+                $dateFormat = 'F';
+            }
             $stats = [];
 
             // Initialize dates based on time range
@@ -168,24 +275,13 @@ class GetAllAppointments extends BaseController
                 $endDate = new \DateTime($endDateStr);
                 while ($currentDate <= $endDate) {
                     $dateStr = $currentDate->format('Y-m-d');
-                    $stats[$dateStr] = ['completed' => 0, 'approved' => 0, 'rejected' => 0, 'rescheduled' => 0, 'pending' => 0, 'cancelled' => 0];
+                    $stats[$dateStr] = ['completed' => 0, 'approved' => 0, 'rejected' => 0, 'rescheduled' => 0, 'pending' => 0, 'feedback_pending' => 0];
                     $currentDate->modify('+1 day');
                 }
-                $response['weekInfo'] = [
-                    'startDate' => $startDateStr,
-                    'endDate' => $endDateStr,
-                    'weekDays' => []
-                ];
-                $tempDate = new \DateTime($startDateStr);
-                $endTempDate = new \DateTime($endDateStr);
-                while ($tempDate <= $endTempDate) {
-                    $response['weekInfo']['weekDays'][] = [
-                        'date' => $tempDate->format('Y-m-d'),
-                        'dayName' => $tempDate->format('l'),
-                        'shortDayName' => $tempDate->format('D'),
-                        'dayMonth' => $tempDate->format('M j')
-                    ];
-                    $tempDate->modify('+1 day');
+            } elseif ($timeRange === 'monthly') {
+                for ($i = 1; $i <= 12; $i++) {
+                    $monthName = date('F', mktime(0, 0, 0, $i, 1));
+                    $stats[$monthName] = ['completed' => 0, 'approved' => 0, 'rejected' => 0, 'rescheduled' => 0, 'pending' => 0, 'feedback_pending' => 0];
                 }
             } elseif ($timeRange === 'weekly' && $startDateStr && $endDateStr) {
                 $currentDate = new \DateTime($startDateStr);
@@ -194,7 +290,7 @@ class GetAllAppointments extends BaseController
                 while ($lastDate->format('N') != 7) { $lastDate->modify('+1 day'); }
                 while ($currentDate <= $lastDate) {
                     $weekStart = $currentDate->format('Y-m-d');
-                    $stats[$weekStart] = ['completed' => 0, 'approved' => 0, 'rejected' => 0, 'rescheduled' => 0, 'pending' => 0, 'cancelled' => 0];
+                    $stats[$weekStart] = ['completed' => 0, 'approved' => 0, 'rejected' => 0, 'rescheduled' => 0, 'pending' => 0, 'feedback_pending' => 0];
                     $currentDate->modify('+7 days');
                 }
                 $response['weekRanges'] = [];
@@ -207,23 +303,31 @@ class GetAllAppointments extends BaseController
                 }
             }
 
-            $totalStats = ['completed' => 0, 'approved' => 0, 'rejected' => 0, 'rescheduled' => 0, 'pending' => 0, 'cancelled' => 0];
-            $monthlyStats = array_fill(1, 12, ['completed' => 0, 'approved' => 0, 'rejected' => 0, 'rescheduled' => 0, 'pending' => 0, 'cancelled' => 0]);
+            $totalStats = ['completed' => 0, 'approved' => 0, 'rejected' => 0, 'rescheduled' => 0, 'pending' => 0, 'feedback_pending' => 0];
+            $monthlyStats = array_fill(1, 12, ['completed' => 0, 'approved' => 0, 'rejected' => 0, 'rescheduled' => 0, 'pending' => 0, 'feedback_pending' => 0]);
 
             foreach ($chartAppointments as $appointment) {
-                $date = date($dateFormat, strtotime($appointment['appointed_date']));
+                $appointmentDate = new \DateTime($appointment['appointed_date']);
                 $month = date('n', strtotime($appointment['appointed_date']));
+                
                 if ($timeRange === 'weekly') {
-                    $appointmentDate = new \DateTime($appointment['appointed_date']);
+                    // Find the week start (Monday) for this appointment
                     while ($appointmentDate->format('N') != 1) { $appointmentDate->modify('-1 day'); }
                     $date = $appointmentDate->format('Y-m-d');
-                    if (!isset($stats[$date])) continue;
+                } elseif ($timeRange === 'daily') {
+                    $date = $appointmentDate->format('Y-m-d');
+                } else {
+                    // Monthly
+                    $date = $appointmentDate->format('F');
                 }
+                
                 if (!isset($stats[$date])) {
-                    $stats[$date] = ['completed' => 0, 'approved' => 0, 'rejected' => 0, 'rescheduled' => 0, 'pending' => 0, 'cancelled' => 0];
+                    $stats[$date] = ['completed' => 0, 'approved' => 0, 'rejected' => 0, 'rescheduled' => 0, 'pending' => 0, 'feedback_pending' => 0];
                 }
                 $status = strtolower($appointment['status']);
-                if (in_array($status, ['completed', 'approved', 'rejected', 'rescheduled', 'pending', 'cancelled'])) {
+
+                // Count the status
+                if (in_array($status, ['completed', 'approved', 'rejected', 'rescheduled', 'pending', 'feedback_pending'])) {
                     $stats[$date][$status]++;
                     $totalStats[$status]++;
                     $monthlyStats[$month][$status]++;
@@ -238,7 +342,7 @@ class GetAllAppointments extends BaseController
                 $response['rejected'][] = $stat['rejected'];
                 $response['rescheduled'][] = $stat['rescheduled'];
                 $response['pending'][] = $stat['pending'];
-                $response['cancelled'][] = $stat['cancelled'];
+                $response['feedback_pending'][] = $stat['feedback_pending'];
             }
             if ($timeRange === 'daily' || $timeRange === 'weekly') {
                 $response['startDate'] = $startDateStr;
@@ -248,17 +352,18 @@ class GetAllAppointments extends BaseController
             $response['totalApproved'] = $totalStats['approved'];
             $response['totalRescheduled'] = $totalStats['rescheduled'];
             $response['totalPending'] = $totalStats['pending'];
-            $response['totalCancelled'] = $totalStats['cancelled'];
+            $response['totalFeedbackPending'] = $totalStats['feedback_pending'];
             for ($i = 1; $i <= 12; $i++) {
                 $response['monthlyCompleted'][$i-1] = $monthlyStats[$i]['completed'];
                 $response['monthlyApproved'][$i-1] = $monthlyStats[$i]['approved'];
                 $response['monthlyRescheduled'][$i-1] = $monthlyStats[$i]['rescheduled'];
                 $response['monthlyRejected'][$i-1] = $monthlyStats[$i]['rejected'];
                 $response['monthlyPending'][$i-1] = $monthlyStats[$i]['pending'];
-                $response['monthlyCancelled'][$i-1] = $monthlyStats[$i]['cancelled'];
+                $response['monthlyFeedbackPending'][$i-1] = $monthlyStats[$i]['feedback_pending'];
             }
             $response['success'] = true;
         } catch (\Exception $e) {
+            $response['success'] = false;
             $response['message'] = $e->getMessage();
         }
 

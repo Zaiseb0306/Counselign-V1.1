@@ -221,10 +221,10 @@ async function downloadPDF() {
         
         pdf.addPage([816, 1056], 'portrait');
         pdf.addImage(imgData2, 'PNG', 0, 0, 816, 1056, undefined, 'NONE');
-
+        
         console.log('Saving PDF...');
 
-        // Save the PDF
+        // Save the PDF without timestamp in filename
         pdf.save(`PDS_${studentName}.pdf`);
 
         console.log('High-quality PDF generated successfully!');

@@ -12,16 +12,26 @@ async function updateFlaskStatusIndicator() {
     return;
   }
 
-  statusBadge.className = "badge rounded-pill bg-secondary";
-  statusText.textContent = "Checking Flask middleware...";
+  // Set a timeout for the health check
+  const timeout = setTimeout(() => {
+    statusBadge.className = "badge rounded-pill bg-warning";
+    statusText.textContent = "Flask middleware unavailable";
+  }, 3000); // 3 second timeout
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
     const response = await fetch(`${FLASK_MIDDLEWARE_URL}/health`, {
       method: "GET",
       headers: {
         Accept: "application/json",
       },
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
+    clearTimeout(timeout);
 
     if (!response.ok) {
       throw new Error(`Health check failed with status ${response.status}`);
@@ -37,6 +47,7 @@ async function updateFlaskStatusIndicator() {
       ? "Flask middleware ON"
       : "Flask middleware OFF";
   } catch (error) {
+    clearTimeout(timeout);
     console.error("Flask middleware status check failed:", error);
     statusBadge.className = "badge rounded-pill bg-danger";
     statusText.textContent = "Flask middleware OFF";
@@ -44,7 +55,7 @@ async function updateFlaskStatusIndicator() {
 }
 
 async function fetchAppointmentsReport(timeRange) {
-  const requestUrl = `${FLASK_MIDDLEWARE_URL}/api/admin/appointments?timeRange=${encodeURIComponent(
+  const requestUrl = `${window.BASE_URL || '/'}admin/appointments/get_all_appointments?timeRange=${encodeURIComponent(
     timeRange
   )}`;
 
@@ -58,14 +69,14 @@ async function fetchAppointmentsReport(timeRange) {
   });
 
   if (!response.ok) {
-    throw new Error(`Middleware request failed with status ${response.status}`);
+    throw new Error(`Request failed with status ${response.status}`);
   }
 
   return response.json();
 }
 
 async function fetchAllAppointments() {
-  const requestUrl = `${FLASK_MIDDLEWARE_URL}/api/admin/appointments`;
+  const requestUrl = `${window.BASE_URL || '/'}admin/appointments/get_all_appointments`;
 
   const response = await fetch(requestUrl, {
     method: "GET",
@@ -77,13 +88,12 @@ async function fetchAllAppointments() {
   });
 
   if (!response.ok) {
-    throw new Error(`Middleware request failed with status ${response.status}`);
+    throw new Error(`Request failed with status ${response.status}`);
   }
 
   return response.json();
 }
 
-// Initialize charts on page load
 document.addEventListener("DOMContentLoaded", function () {
   initializeCharts();
   updateFlaskStatusIndicator();
@@ -147,14 +157,6 @@ function initializeCharts() {
           tension: 0.4,
           data: [],
         },
-        {
-          label: "Cancelled",
-          borderColor: "#6c757d",
-          backgroundColor: "#6c757d",
-          fill: false,
-          tension: 0.4,
-          data: [],
-        },
       ],
     },
     options: {
@@ -199,7 +201,7 @@ function initializeCharts() {
   pieChart = new Chart(pieCtx, {
     type: "doughnut",
     data: {
-      labels: ["Completed", "Approved", "Rescheduled", "Pending", "Cancelled"],
+      labels: ["Completed", "Approved", "Rescheduled", "Pending", "Feedback Pending"],
       datasets: [
         {
           data: [0, 0, 0, 0, 0],
@@ -208,7 +210,7 @@ function initializeCharts() {
             "#198754",
             "#fd7e14",
             "#ffc107",
-            "#6c757d",
+            "#0dcaf0",
           ],
           borderWidth: 0,
           cutout: "65%",
@@ -270,9 +272,17 @@ function updateReports() {
 function updateCharts(data) {
   // Validate data
   if (!data || !Array.isArray(data.labels)) {
-      console.error('Invalid data format received');
+      console.error('Invalid data format received:', data);
       return;
   }
+
+  console.log('UpdateCharts called with data:', data);
+  console.log('Total stats:', {
+    totalCompleted: data.totalCompleted,
+    totalApproved: data.totalApproved,
+    totalRescheduled: data.totalRescheduled,
+    totalPending: data.totalPending
+  });
 
   const timeRange = document.getElementById('timeRange').value;
   let labels = data.labels;
@@ -344,9 +354,6 @@ function updateCharts(data) {
   trendChart.data.datasets[3].data = timeRange === 'monthly' ? 
       (data.monthlyPending || Array(12).fill(0)) : 
       (data.pending || Array(labels.length).fill(0));
-  trendChart.data.datasets[4].data = timeRange === 'monthly' ? 
-      (data.monthlyCancelled || Array(12).fill(0)) : 
-      (data.cancelled || Array(labels.length).fill(0));
 
   // Update chart title
   let titleText = `Appointment Trends - ${timeRange.charAt(0).toUpperCase() + timeRange.slice(1)} Report`;
@@ -449,7 +456,7 @@ function updateCharts(data) {
       parseInt(data.totalApproved) || 0,
       parseInt(data.totalRescheduled) || 0,
       parseInt(data.totalPending) || 0,
-      parseInt(data.totalCancelled) || 0
+      parseInt(data.totalFeedbackPending) || 0
   ];
   pieChart.data.datasets[0].data = pieData;
 
@@ -466,11 +473,19 @@ function updateCharts(data) {
 
 // Updated updateStatistics function - ensure proper integer conversion
 function updateStatistics(data) {
+  console.log('updateStatistics called with data:', data);
   document.getElementById('completedCount').textContent = parseInt(data.totalCompleted) || 0;
   document.getElementById('approvedCount').textContent = parseInt(data.totalApproved) || 0;
   document.getElementById('rescheduledCount').textContent = parseInt(data.totalRescheduled) || 0;
   document.getElementById('pendingCount').textContent = parseInt(data.totalPending) || 0;
-  document.getElementById('cancelledCount').textContent = parseInt(data.totalCancelled) || 0;
+  document.getElementById('feedbackPendingCount').textContent = parseInt(data.totalFeedbackPending) || 0;
+  console.log('Statistics updated:', {
+    completed: document.getElementById('completedCount').textContent,
+    approved: document.getElementById('approvedCount').textContent,
+    rescheduled: document.getElementById('rescheduledCount').textContent,
+    pending: document.getElementById('pendingCount').textContent,
+    feedbackPending: document.getElementById('feedbackPendingCount').textContent
+  });
 }
 
 function resetStatistics() {
@@ -478,7 +493,7 @@ function resetStatistics() {
   document.getElementById("approvedCount").textContent = "0";
   document.getElementById("rescheduledCount").textContent = "0";
   document.getElementById("pendingCount").textContent = "0";
-  document.getElementById("cancelledCount").textContent = "0";
+  document.getElementById("feedbackPendingCount").textContent = "0";
 
   // Reset charts
   if (trendChart && pieChart) {
@@ -562,8 +577,7 @@ function saveToHistory(reportData) {
       reportData.totalCompleted +
       reportData.totalApproved +
       reportData.totalRescheduled +
-      reportData.totalPending +
-      reportData.totalCancelled,
+      reportData.totalPending,
     data: reportData,
   };
 
@@ -676,6 +690,42 @@ document.addEventListener("DOMContentLoaded", function () {
     clearDateRangeBtn.addEventListener("click", clearDateRange);
   if (applyFiltersBtn) applyFiltersBtn.addEventListener("click", applyFilters);
 
+  // Utility functions
+  function getStatusClass(status) {
+    if (!status) return 'pending';
+    switch (status.toUpperCase()) {
+      case 'APPROVED':
+        return 'approved';
+      case 'REJECTED':
+        return 'rejected';
+      case 'COMPLETED':
+        return 'completed';
+      case 'PENDING':
+      default:
+        return 'pending';
+    }
+  }
+
+  function formatReason(reason) {
+    if (!reason) return '';
+    const idx = reason.indexOf(':');
+    if (idx === -1) return reason;
+    // Split at the first colon and insert a <br>
+    return reason.slice(0, idx + 1) + '<br>' + reason.slice(idx + 1).trim();
+  }
+
+  function getFeedbackStatus(appointment) {
+    if (appointment.status === 'completed') {
+      if (appointment.feedback_status === 'submitted') {
+        return '<span class="badge bg-success">Feedback Submitted</span>';
+      } else {
+        return '<span class="badge bg-warning">Feedback Pending</span>';
+      }
+    }
+    return 'N/A';
+  }
+
+
   // Load filter data on page load
   loadFilterData();
 
@@ -683,6 +733,12 @@ document.addEventListener("DOMContentLoaded", function () {
     appointments,
     targetTableId = "allAppointmentsTable"
   ) {
+    // Determine if this table should show the reason column
+    const showReason = [
+      "allAppointmentsTable",
+      "rescheduledAppointmentsTable",
+    ].includes(targetTableId);
+
     const tableBody = document.getElementById(targetTableId);
     if (!tableBody) {
       console.error(`Table body with ID ${targetTableId} not found`);
@@ -692,17 +748,10 @@ document.addEventListener("DOMContentLoaded", function () {
     tableBody.innerHTML = "";
 
     if (!appointments || appointments.length === 0) {
-      tableBody.innerHTML =
-        '<tr><td colspan="10" class="text-center">No appointments found</td></tr>';
+      const colspan = showReason ? 16 : 15;
+      tableBody.innerHTML = `<tr><td colspan="${colspan}" class="text-center">No appointments found</td></tr>`;
       return;
     }
-
-    // Determine if this table should show the reason column
-    const showReason = [
-      "allAppointmentsTable",
-      "rescheduledAppointmentsTable",
-      "cancelledAppointmentsTable",
-    ].includes(targetTableId);
 
     // Sort appointments from oldest to newest
     const sortedAppointments = [...appointments].sort((a, b) => {
@@ -716,6 +765,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     sortedAppointments.forEach((appointment) => {
       const row = document.createElement("tr");
+      const feedbackMean = calculateFeedbackMean(appointment);
+      const interpretation = getInterpretation(feedbackMean);
       row.innerHTML = `
                 <td>${appointment.student_id || ""}</td>
                 <td>${appointment.student_name || ""}</td>
@@ -734,19 +785,37 @@ document.addEventListener("DOMContentLoaded", function () {
                     : "First Session") ||
                   ""
                 }</td>
-                <td>${appointment.purpose || "N/A"}</td>
+                <td>${appointment.purpose || ""}</td>
+                <td>${appointment.description ? '<button class="btn btn-sm btn-info" onclick="viewStudentConcern(\'' + encodeURIComponent(JSON.stringify(appointment)) + '\')"><i class="fas fa-eye"></i></button>' : ''}</td>
+                <td>${appointment.counselor_remarks ? '<button class="btn btn-sm btn-info" onclick="viewCounselorRemarks(\'' + encodeURIComponent(JSON.stringify(appointment)) + '\')"><i class="fas fa-eye"></i></button>' : ''}</td>
                 <td>${appointment.counselor_name || ""}</td>
+                <td>${getFeedbackStatus(appointment)}</td>
+                <td>${feedbackMean !== null ? feedbackMean.toFixed(2) : ''}</td>
+                <td>${interpretation || ''}</td>
                 <td><span class="badge badge-${getStatusClass(
                   appointment.status
                 )}">${appointment.status || "PENDING"}</span></td>
                 ${
                   showReason
-                    ? `<td>${formatReason(appointment.reason)}</td>`
+                    ? `<td>${appointment.reason ? '<button class="btn btn-sm btn-info" onclick="viewReasonForStatus(\'' + encodeURIComponent(JSON.stringify(appointment)) + '\')"><i class="fas fa-eye"></i></button>' : ''}</td>`
                     : ""
                 }
             `;
       tableBody.appendChild(row);
     });
+
+    // Add total summary row at the bottom
+    if (sortedAppointments.length > 0) {
+      const totalRow = document.createElement("tr");
+      totalRow.className = "table-info fw-bold";
+      const colspan = showReason ? 15 : 14;
+      totalRow.innerHTML = `
+        <td colspan="${colspan}" class="text-end">Total Appointments:</td>
+        <td>${sortedAppointments.length}</td>
+        ${showReason ? '<td></td>' : ''}
+      `;
+      tableBody.appendChild(totalRow);
+    }
   }
 
   // Handle tab changes
@@ -771,9 +840,9 @@ document.addEventListener("DOMContentLoaded", function () {
         status = "COMPLETED";
         targetTableId = "completedAppointmentsTable";
         break;
-      case "cancelled":
-        status = "CANCELLED";
-        targetTableId = "cancelledAppointmentsTable";
+      case "feedback-pending":
+        status = "FEEDBACK_PENDING";
+        targetTableId = "feedbackPendingAppointmentsTable";
         break;
       case "followup":
         status = "FOLLOWUP";
@@ -800,6 +869,11 @@ document.addEventListener("DOMContentLoaded", function () {
           (st === "PENDING" || st === "COMPLETED" || st === "CANCELLED")
         );
       });
+    } else if (status === "FEEDBACK_PENDING") {
+      filteredAppointments = allAppointments.filter((app) => {
+        const st = (app.status || "").toString().toLowerCase();
+        return st === "feedback_pending";
+      });
     } else {
       filteredAppointments = allAppointments.filter(
         (app) => app.status && app.status.toUpperCase() === status
@@ -813,7 +887,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Update initial display after fetch
-  function updateInitialDisplay() {
+  function updateInitialDisplay(followUps = []) {
     SecureLogger.info("Updating initial display for all tabs");
 
     // Display all appointments first
@@ -844,27 +918,21 @@ document.addEventListener("DOMContentLoaded", function () {
     );
     displayAppointments(completedAppointments, "completedAppointmentsTable");
 
-    const cancelledAppointments = allAppointments.filter(
-      (app) => app.status && app.status.toUpperCase() === "CANCELLED"
-    );
-    SecureLogger.info(
-      `Found ${cancelledAppointments.length} cancelled appointments`
-    );
-    displayAppointments(cancelledAppointments, "cancelledAppointmentsTable");
-
-    const followUpAppointments = allAppointments.filter((app) => {
-      const isFollowUp =
-        app.record_kind === "follow_up" ||
-        (app.appointment_type &&
-          String(app.appointment_type).toLowerCase().includes("follow-up"));
-      const st = (app.status || "").toString().toUpperCase();
-      return (
-        isFollowUp &&
-        (st === "PENDING" || st === "COMPLETED" || st === "CANCELLED")
-      );
+    const feedbackPendingAppointments = allAppointments.filter((app) => {
+      const st = (app.status || "").toString().toLowerCase();
+      return st === "feedback_pending";
     });
     SecureLogger.info(
-      `Found ${followUpAppointments.length} follow-up appointments (completed/cancelled)`
+      `Found ${feedbackPendingAppointments.length} feedback pending appointments`
+    );
+    displayAppointments(feedbackPendingAppointments, "feedbackPendingAppointmentsTable");
+
+    const followUpAppointments = followUps.filter((app) => {
+      const st = (app.status || "").toString().toUpperCase();
+      return st === "PENDING" || st === "COMPLETED";
+    });
+    SecureLogger.info(
+      `Found ${followUpAppointments.length} follow-up appointments`
     );
     displayAppointments(followUpAppointments, "followUpAppointmentsTable");
   }
@@ -877,7 +945,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (data.success) {
         allAppointments = data.appointments;
-        SecureLogger.info("Appointments received:", allAppointments);
+        const followUps = data.followUps || [];
+        
+        // Merge follow-ups into allAppointments for filtering purposes
+        allAppointments = [...allAppointments, ...followUps];
+        
+        SecureLogger.info("Appointments received:", data.appointments);
+        SecureLogger.info("Follow-ups received:", followUps);
+        SecureLogger.info("Merged appointments for filtering:", allAppointments);
 
         // Check if we have appointments with these statuses
         SecureLogger.info(
@@ -898,14 +973,7 @@ document.addEventListener("DOMContentLoaded", function () {
             (app) => app.status && app.status.toUpperCase() === "COMPLETED"
           ).length
         );
-        SecureLogger.info(
-          "CANCELLED appointments:",
-          allAppointments.filter(
-            (app) => app.status && app.status.toUpperCase() === "CANCELLED"
-          ).length
-        );
-
-        updateInitialDisplay(); // Update all tables initially
+        updateInitialDisplay(followUps); // Update all tables initially
 
         if (allAppointments.length === 0) {
           showEmptyState();
@@ -964,10 +1032,6 @@ document.addEventListener("DOMContentLoaded", function () {
           status = "COMPLETED";
           targetTableId = "completedAppointmentsTable";
           break;
-        case "cancelled-tab":
-          status = "CANCELLED";
-          targetTableId = "cancelledAppointmentsTable";
-          break;
         case "followup-tab":
           status = "FOLLOWUP";
           targetTableId = "followUpAppointmentsTable";
@@ -983,7 +1047,7 @@ document.addEventListener("DOMContentLoaded", function () {
           (app) =>
             app.record_kind === "follow_up" &&
             app.status &&
-            ["COMPLETED", "CANCELLED"].includes(app.status.toUpperCase())
+            ["PENDING", "COMPLETED"].includes(app.status.toUpperCase())
         );
       } else if (status !== "all") {
         filtered = filtered.filter(
@@ -1209,7 +1273,7 @@ document.addEventListener("DOMContentLoaded", function () {
       filteredAppointments = filteredAppointments.filter((app) => {
         // Prefer id match if appointment has it
         if (
-          typeof app.counselor_id !== "undefined" &&
+          typeof app.counselor_id !== "N/A" &&
           app.counselor_id !== null
         ) {
           if (String(app.counselor_id) === String(filters.counselorId))
@@ -1274,7 +1338,6 @@ document.addEventListener("DOMContentLoaded", function () {
           approved: "Approved",
           rescheduled: "Rescheduled",
           completed: "Completed",
-          cancelled: "Cancelled",
         };
       parts.push(`Status: ${statusMap[tabId] || "All"}`);
     }
@@ -1300,6 +1363,64 @@ document.addEventListener("DOMContentLoaded", function () {
     if (filters.yearLevel) parts.push(`Year: ${filters.yearLevel}`);
     return parts.join(" | ");
   }
+
+// Helper functions for feedback calculation (accessible from exportToPDF)
+function calculateFeedbackMean(appointment) {
+  if (appointment.feedback_status !== 'submitted') {
+    return null;
+  }
+
+  const feedbackQuestions = [
+    'q1_ease_of_use', 'q2_satisfaction', 'q3_timeliness',
+    'q4_information_clarity', 'q5_staff_helpfulness', 'q6_technology_reliability',
+    'q7_privacy_confidence', 'q8_recommendation', 'q9_overall_experience',
+    'q10_future_use'
+  ];
+
+  let sum = 0;
+  let count = 0;
+
+  feedbackQuestions.forEach(question => {
+    const value = appointment[question];
+    if (value !== null && value !== undefined && value !== '') {
+      sum += parseFloat(value);
+      count++;
+    }
+  });
+
+  return count > 0 ? sum / count : null;
+}
+
+function getInterpretation(mean) {
+  if (mean === null) {
+    return '';
+  }
+
+  if (mean >= 4.50 && mean <= 5.00) {
+    return 'Excellent';
+  } else if (mean >= 3.50 && mean < 4.50) {
+    return 'Very Good';
+  } else if (mean >= 2.50 && mean < 3.50) {
+    return 'Good';
+  } else if (mean >= 1.50 && mean < 2.50) {
+    return 'Fair';
+  } else if (mean >= 1.00 && mean < 1.50) {
+    return 'Poor';
+  } else {
+    return '';
+  }
+}
+
+function getFeedbackStatusText(appointment) {
+  if (appointment.status === 'completed') {
+    if (appointment.feedback_status === 'submitted') {
+      return 'Feedback Submitted';
+    } else {
+      return 'Feedback Pending';
+    }
+  }
+  return '';
+}
 
 // Export to PDF - ADMIN VERSION
 async function exportToPDF(filters = {}) {
@@ -1350,17 +1471,13 @@ async function exportToPDF(filters = {}) {
                   appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'COMPLETED');
                   reportTitle = 'Completed Consultation Records';
                   break;
-              case 'cancelled':
-                  appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'CANCELLED');
-                  reportTitle = 'Cancelled Consultation Records';
-                  break;
               case 'followup':
                   // Filter for follow-up appointments only
                   appointmentsToExport = allAppointments.filter(app => {
                       const isFollowUp = (app.record_kind === 'follow_up') || 
                                        (app.appointment_type && String(app.appointment_type).toLowerCase().includes('follow-up'));
                       const st = (app.status || '').toString().toUpperCase();
-                      return isFollowUp && (st === 'PENDING' || st === 'COMPLETED' || st === 'CANCELLED');
+                      return isFollowUp && (st === 'PENDING' || st === 'COMPLETED');
                   });
                   reportTitle = 'Follow-up Consultation Records';
                   break;
@@ -1409,11 +1526,16 @@ async function exportToPDF(filters = {}) {
       const titleX = (pageWidth - titleWidth) / 2;
       doc.text(reportTitle, titleX, 35);
       
-      // Define table headers (Reason column removed for PDF)
-      const tableHeaders = ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Status'];
+      // Only include Status column for "All Consultation Records"
+      const isAllRecords = reportTitle === 'All Consultation Records';
+      const tableHeaders = isAllRecords
+          ? ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Student Feedbacks', 'Mean', 'Interpretation', 'Status']
+          : ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Student Feedbacks', 'Mean', 'Interpretation'];
       
       const tableData = appointmentsToExport.map(app => {
           const appointmentType = app.appointment_type || (app.record_kind === 'follow_up' ? 'Follow-up' : 'First Session');
+          const feedbackMean = calculateFeedbackMean(app);
+          const interpretation = getInterpretation(feedbackMean);
           const baseData = [
               (app.student_id || app.user_id || ''),
               app.student_name || '',
@@ -1424,10 +1546,15 @@ async function exportToPDF(filters = {}) {
               appointmentType,
               app.purpose || 'N/A',
               app.counselor_name || '',
-              (app.status ? String(app.status).toLowerCase() : '')
+              getFeedbackStatusText(app),
+              feedbackMean !== null ? feedbackMean.toFixed(2) : 'N/A',
+              interpretation || 'N/A'
           ];
-          
-          
+
+          if (isAllRecords) {
+              baseData.push(app.status ? String(app.status).toLowerCase() : '');
+          }
+
           return baseData;
       });
 
@@ -1453,18 +1580,28 @@ async function exportToPDF(filters = {}) {
           alternateRowStyles: {
               fillColor: [245, 245, 245]
           },
-          columnStyles: {
-              0: { cellWidth: 17 },  // User ID
-              1: { cellWidth: 26 },  // Full Name
-              2: { cellWidth: 14 },  // Date
-              3: { cellWidth: 16 },  // Time
-              4: { cellWidth: 14 },  // Method Type
-              5: { cellWidth: 20 },  // Consultation Type
-              6: { cellWidth: 16 },  // Session
-              7: { cellWidth: 24 },  // Purpose
-              8: { cellWidth: 22 },  // Counselor
-              9: { cellWidth: 15 },  // Status
-          },
+columnStyles: isAllRecords ? {
+               0: { cellWidth: 17 },  // User ID
+               1: { cellWidth: 26 },  // Full Name
+               2: { cellWidth: 14 },  // Date
+               3: { cellWidth: 16 },  // Time
+               4: { cellWidth: 14 },  // Method Type
+               5: { cellWidth: 20 },  // Consultation Type
+               6: { cellWidth: 16 },  // Session
+               7: { cellWidth: 24 },  // Purpose
+               8: { cellWidth: 22 },  // Counselor
+               9: { cellWidth: 15 },  // Status
+           } : {
+               0: { cellWidth: 18 },  // User ID
+               1: { cellWidth: 28 },  // Full Name
+               2: { cellWidth: 15 },  // Date
+               3: { cellWidth: 17 },  // Time
+               4: { cellWidth: 15 },  // Method Type
+               5: { cellWidth: 22 },  // Consultation Type
+               6: { cellWidth: 17 },  // Session
+               7: { cellWidth: 26 },  // Purpose
+               8: { cellWidth: 25 },  // Counselor
+           },
           didDrawPage: function(data) {
               // Add header
               doc.addImage(logoImg, 'PNG', 12, 10, 20, 15);
@@ -1551,17 +1688,13 @@ function exportToExcel(filters = {}) {
               appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'COMPLETED');
               reportTitle = 'Completed Consultation Records';
               break;
-          case 'cancelled':
-              appointmentsToExport = allAppointments.filter(app => app.status && app.status.toUpperCase() === 'CANCELLED');
-              reportTitle = 'Cancelled Consultation Records';
-              break;
           case 'followup':
               // Filter for follow-up appointments only
               appointmentsToExport = allAppointments.filter(app => {
                   const isFollowUp = (app.record_kind === 'follow_up') || 
                                    (app.appointment_type && String(app.appointment_type).toLowerCase().includes('follow-up'));
                   const st = (app.status || '').toString().toUpperCase();
-                  return isFollowUp && (st === 'PENDING' || st === 'COMPLETED' || st === 'CANCELLED');
+                  return isFollowUp && (st === 'PENDING' || st === 'COMPLETED');
               });
               reportTitle = 'Follow-up Consultation Records';
               break;
@@ -1581,16 +1714,16 @@ function exportToExcel(filters = {}) {
   });
 
   // Determine if we need to show "Reason for Status" column
-  const showReason = reportTitle.includes('Rescheduled') || reportTitle.includes('Cancelled') || reportTitle.includes('All');
+  const showReason = reportTitle.includes('Rescheduled') || reportTitle.includes('All');
 
   // Prepare the header row
-  const headerRow = showReason 
-      ? ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Status', 'Reason for Status']
-      : ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Status'];
+  const headerRow = showReason
+      ? ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Student Feedbacks', 'Mean', 'Interpretation', 'Status', 'Reason for Status']
+      : ['User ID', 'Full Name', 'Date', 'Time', 'Method Type', 'Consultation Type', 'Session', 'Purpose', 'Counselor', 'Student Feedbacks', 'Mean', 'Interpretation', 'Status'];
   
   // Helper function to escape CSV values
   function escapeCSV(value) {
-      if (value === null || value === undefined) return '';
+      if (value === null || value === undefined || value === 'N/A' || value === 'undefined') return '';
       const str = String(value);
       if (str.includes(',') || str.includes('"') || str.includes('\n')) {
           return '"' + str.replace(/"/g, '""') + '"';
@@ -1600,13 +1733,17 @@ function exportToExcel(filters = {}) {
 
   // Build CSV content
   let csvContent = '';
-  
+
   // Add header row
   csvContent += headerRow.map(escapeCSV).join(',') + '\n';
-  
+
   // Add the appointment data
   appointmentsToExport.forEach(app => {
       const appointmentType = app.appointment_type || (app.record_kind === 'follow_up' ? 'Follow-up Session' : 'First Session');
+      const feedbackMean = calculateFeedbackMean(app);
+      const interpretation = getInterpretation(feedbackMean);
+      const feedbackStatus = getFeedbackStatusText(app);
+      
       const row = [
           escapeCSV(app.student_id || app.user_id || ''),
           escapeCSV(app.student_name || ''),
@@ -1615,15 +1752,18 @@ function exportToExcel(filters = {}) {
           escapeCSV(app.method_type),
           escapeCSV(app.consultation_type || 'Individual Consultation'),
           escapeCSV(appointmentType),
-          escapeCSV(app.purpose || 'N/A'),
+          escapeCSV(app.purpose || ''),
           escapeCSV(app.counselor_name),
+          escapeCSV(feedbackStatus),
+          escapeCSV(feedbackMean !== null ? feedbackMean.toFixed(2) : ''),
+          escapeCSV(interpretation || ''),
           escapeCSV(app.status ? String(app.status).toLowerCase() : '')
       ];
-      
+
       if (showReason) {
           row.push(escapeCSV(app.reason || ''));
       }
-      
+
       csvContent += row.join(',') + '\n';
   });
 
@@ -1714,8 +1854,6 @@ function exportToExcel(filters = {}) {
         return "rescheduled";
       case "COMPLETED":
         return "completed";
-      case "CANCELLED":
-        return "cancelled";
       case "PENDING":
       default:
         return "pending";
@@ -1767,4 +1905,74 @@ function exportToExcel(filters = {}) {
       day: "numeric",
     });
   }
+
+// Cleaned up leftover code from removed function
+
+    // Utility functions
+    function getStatusClass(status) {
+        if (!status) return 'pending';
+        switch (status.toUpperCase()) {
+            case 'APPROVED':
+                return 'approved';
+            case 'REJECTED':
+                return 'rejected';
+            case 'COMPLETED':
+                return 'completed';
+            case 'PENDING':
+            default:
+                return 'pending';
+        }
+    }
+
+    function formatReason(reason) {
+        if (!reason) return '';
+        const idx = reason.indexOf(':');
+        if (idx === -1) return reason;
+        // Split at the first colon and insert a <br>
+        return reason.slice(0, idx + 1) + '<br>' + reason.slice(idx + 1).trim();
+    }
+
+    function getFeedbackStatus(appointment) {
+        if (appointment.status === 'completed') {
+            if (appointment.feedback_status === 'submitted') {
+                return '<span class="badge bg-success">Feedback Submitted</span>';
+            } else {
+                return '<span class="badge bg-warning">Feedback Pending</span>';
+            }
+        }
+        return '';
+    }
 });
+
+// Global functions for viewing details
+function viewStudentConcern(encodedAppointment) {
+    const appointment = JSON.parse(decodeURIComponent(encodedAppointment));
+    document.getElementById('modalStudentName').textContent = appointment.student_name || 'N/A';
+    document.getElementById('modalDateTime').textContent = `${appointment.appointed_date ? new Date(appointment.appointed_date).toLocaleDateString() : 'N/A'} at ${appointment.appointed_time || 'N/A'}`;
+    document.getElementById('modalDetails').textContent = appointment.description || 'No student concern available';
+    document.getElementById('viewDetailsModalLabel').innerHTML = '<i class="fas fa-user me-2"></i>Student Concern';
+    const modal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+    modal.show();
+}
+
+function viewCounselorRemarks(encodedAppointment) {
+    const appointment = JSON.parse(decodeURIComponent(encodedAppointment));
+    document.getElementById('modalStudentName').textContent = appointment.student_name || 'N/A';
+    document.getElementById('modalDateTime').textContent = `${appointment.appointed_date ? new Date(appointment.appointed_date).toLocaleDateString() : 'N/A'} at ${appointment.appointed_time || 'N/A'}`;
+    document.getElementById('modalDetails').textContent = appointment.counselor_remarks || 'No counselor remarks available';
+    document.getElementById('viewDetailsModalLabel').innerHTML = '<i class="fas fa-comment-dots me-2"></i>Counselor Remarks';
+    const modal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+    modal.show();
+}
+
+function viewReasonForStatus(encodedAppointment) {
+    const appointment = JSON.parse(decodeURIComponent(encodedAppointment));
+    document.getElementById('modalStudentName').textContent = appointment.student_name || 'N/A';
+    document.getElementById('modalDateTime').textContent = `${appointment.appointed_date ? new Date(appointment.appointed_date).toLocaleDateString() : 'N/A'} at ${appointment.appointed_time || 'N/A'}`;
+    document.getElementById('modalDetails').textContent = appointment.reason || 'No reason for status available';
+    document.getElementById('viewDetailsModalLabel').innerHTML = '<i class="fas fa-info-circle me-2"></i>Reason for Status';
+    const modal = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+    modal.show();
+}
+
+// End of file

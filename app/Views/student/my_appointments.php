@@ -155,11 +155,6 @@
                             Completed
                         </button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" type="button">
-                            Cancelled
-                        </button>
-                    </li>
                 </ul>
 
                 <!-- Filter Options -->
@@ -258,29 +253,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="completedAppointmentsTable">
-                                    <!-- Data will be populated by JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Cancelled Appointments Tab -->
-                    <div class="tab-pane fade" id="cancelled" role="tabpanel">
-                        <div class="table-responsive shadow-sm rounded">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Time</th>
-                                        <th>Consultation Type</th>
-                                        <th>Method Type</th>
-                                        <th>Purpose</th>
-                                        <th>Counselor</th>
-                                        <th>Status</th>
-                                        <th>Reason for Cancellation</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cancelledAppointmentsTable">
                                     <!-- Data will be populated by JavaScript -->
                                 </tbody>
                             </table>

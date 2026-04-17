@@ -176,6 +176,112 @@
         </div>
     </div>
 
+    <!-- Student Feedback Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-star me-2"></i>Student Feedback Analysis</h4>
+                </div>
+                <div class="card-body">
+                    <div id="feedback-loading" class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading feedback data...</span>
+                        </div>
+                        <p class="mt-2">Loading feedback analysis...</p>
+                    </div>
+                    <div id="feedback-content" class="d-none">
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-primary">Counselor Performance</h5>
+                                        <h2 class="text-success" id="counselor-performance-mean">-</h2>
+                                        <p class="text-muted">Weighted Mean</p>
+                                        <small id="counselor-performance-total" class="text-muted">-</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-info">System Usability</h5>
+                                        <h2 class="text-success" id="system-usability-mean">-</h2>
+                                        <p class="text-muted">Weighted Mean</p>
+                                        <small id="system-usability-total" class="text-muted">-</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-warning">Overall Satisfaction</h5>
+                                        <h2 class="text-success" id="overall-satisfaction-mean">-</h2>
+                                        <p class="text-muted">Weighted Mean</p>
+                                        <small id="overall-satisfaction-total" class="text-muted">-</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <h5>Detailed Frequency Distribution</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Category</th>
+                                                <th>1 (Strongly Disagree)</th>
+                                                <th>2 (Disagree)</th>
+                                                <th>3 (Neutral)</th>
+                                                <th>4 (Agree)</th>
+                                                <th>5 (Strongly Agree)</th>
+                                                <th>Total Responses</th>
+                                                <th>Weighted Mean</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="feedback-frequency-table">
+                                            <tr>
+                                                <td>Counselor Performance</td>
+                                                <td id="cp-1">-</td>
+                                                <td id="cp-2">-</td>
+                                                <td id="cp-3">-</td>
+                                                <td id="cp-4">-</td>
+                                                <td id="cp-5">-</td>
+                                                <td id="cp-total">-</td>
+                                                <td id="cp-mean">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>System Usability</td>
+                                                <td id="su-1">-</td>
+                                                <td id="su-2">-</td>
+                                                <td id="su-3">-</td>
+                                                <td id="su-4">-</td>
+                                                <td id="su-5">-</td>
+                                                <td id="su-total">-</td>
+                                                <td id="su-mean">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Overall Satisfaction</td>
+                                                <td id="os-1">-</td>
+                                                <td id="os-2">-</td>
+                                                <td id="os-3">-</td>
+                                                <td id="os-4">-</td>
+                                                <td id="os-5">-</td>
+                                                <td id="os-total">-</td>
+                                                <td id="os-mean">-</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container mt-4">
         <div class="appointment-container">
             <div class="row mb-4">

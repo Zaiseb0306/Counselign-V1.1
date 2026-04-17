@@ -117,11 +117,13 @@ async function checkAppointmentEligibility() {
             const appointmentForm = document.getElementById('appointmentForm');
             const formElements = appointmentForm.querySelectorAll('input, select, textarea');
             
-            if (data.hasPending || data.hasApproved || data.hasRescheduled || data.hasPendingFollowUp) {
-                // Priority: pending follow-up > rescheduled > pending > approved
+            if (data.hasPending || data.hasApproved || data.hasRescheduled || data.hasFeedbackPending || data.hasPendingFollowUp) {
+                // Priority: pending follow-up > feedback pending > rescheduled > pending > approved
                 const messageDiv = document.getElementById('formMessage');
                 if (data.hasPendingFollowUp) {
                     messageDiv.textContent = 'You have a pending follow-up session. Please complete or resolve it before scheduling a new appointment.';
+                } else if (data.hasFeedbackPending) {
+                    messageDiv.textContent = 'You have a completed appointment that requires feedback. Please submit your feedback before scheduling a new appointment.';
                 } else if (data.hasRescheduled) {
                     messageDiv.textContent = 'You have a rescheduled appointment. Please wait for it to be approved before scheduling another one.';
                 } else if (data.hasPending) {
@@ -1064,6 +1066,12 @@ function validateForm() {
 
     if (!purpose) {
         showMessage('error', 'Please select the purpose of your consultation.');
+        return false;
+    }
+
+    const description = document.getElementById('briefDescription').value.trim();
+    if (!description) {
+        showMessage('error', 'Please describe your student concern.');
         return false;
     }
 

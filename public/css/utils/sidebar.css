@@ -517,12 +517,12 @@ footer {
     .sidebar-overlay {
         z-index: 1999;
     }
-    
+
     /* Hide button labels on tablet/mobile */
     .top-bar-btn .btn-label {
         display: none;
     }
-    
+
     .top-bar-btn {
         padding: 8px 12px;
         min-width: 40px;

@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const approvedCountEl = document.getElementById('approvedCount');
         const completedCountEl = document.getElementById('completedCount');
         const rescheduledCountEl = document.getElementById('rescheduledCount');
-        const cancelledCountEl = document.getElementById('cancelledCount');
+        const feedbackPendingCountEl = document.getElementById('feedbackPendingCount');
 
         let appointments = [];
         let currentAppointmentId = null;
@@ -70,13 +70,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function updateStatusCounts(data) {
-            const counts = { pending: 0, approved: 0, completed: 0, rescheduled: 0, cancelled: 0 };
+            const counts = { pending: 0, approved: 0, completed: 0, rescheduled: 0, feedback_pending: 0 };
             data.forEach(a => { if (counts.hasOwnProperty(a.status)) counts[a.status]++; });
             if (pendingCountEl) pendingCountEl.textContent = counts.pending;
             if (approvedCountEl) approvedCountEl.textContent = counts.approved;
             if (completedCountEl) completedCountEl.textContent = counts.completed;
             if (rescheduledCountEl) rescheduledCountEl.textContent = counts.rescheduled;
-            if (cancelledCountEl) cancelledCountEl.textContent = counts.cancelled;
+            if (feedbackPendingCountEl) feedbackPendingCountEl.textContent = counts.feedback_pending;
         }
 
         function isDateInRange(dateString, rangeType) {
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
             set('#modalUpdated', formatDateTime(appointment.updated_at));
             const modalDescription = modal.querySelector('#modalDescription'); if (modalDescription) modalDescription.textContent = appointment.description || 'No description provided.';
             const reasonContainer = modal.querySelector('#modalReasonContainer'); const reasonEl = modal.querySelector('#modalReason');
-            if (reasonContainer && reasonEl) { if (['cancelled','rejected'].includes(appointment.status)) { reasonContainer.style.display='block'; reasonEl.textContent = appointment.reason || 'No reason provided.'; } else { reasonContainer.style.display='none'; } }
+            if (reasonContainer && reasonEl) { if (['rejected'].includes(appointment.status)) { reasonContainer.style.display='block'; reasonEl.textContent = appointment.reason || 'No reason provided.'; } else { reasonContainer.style.display='none'; } }
             const idEl = modal.querySelector('#modalAppointmentId'); if (idEl) idEl.value = appointment.id;
             updateModalButtons(modal, appointment.status);
             (bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal)).show();
@@ -342,8 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     case 'approved': statusClass='bg-success'; statusIcon='check'; statusText='Approved'; break;
                     case 'rejected': statusClass='bg-danger'; statusIcon='times'; statusText='Rejected'; break;
                     case 'completed': statusClass='bg-primary'; statusIcon='check-double'; statusText='Completed'; break;
-                    case 'cancelled': statusClass='bg-secondary'; statusIcon='info-circle'; statusText='Cancelled'; break;
-                    default: statusClass='bg-secondary'; statusIcon='info-circle'; statusText='Cancelled';
+                    default: statusClass='bg-secondary'; statusIcon='info-circle'; statusText='Completed';
                 }
                 const statusIndicator=document.createElement('div'); statusIndicator.className=`status-indicator d-inline-flex align-items-center ${statusClass} text-white px-3 py-2 rounded`; statusIndicator.innerHTML=`<i class="fas fa-${statusIcon} me-2"></i><span>This appointment has been ${statusText.toLowerCase()}</span>`;
                 const closeButton=document.createElement('button'); closeButton.type='button'; closeButton.className='btn btn-secondary ms-3'; closeButton.setAttribute('data-bs-dismiss','modal'); closeButton.textContent='Close';
@@ -397,7 +396,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'approved': return 'bg-success';
                 case 'rejected': return 'bg-danger';
                 case 'completed': return 'bg-info';
-                case 'cancelled': return 'bg-secondary';
                 case 'rescheduled': return 'badge-rescheduled';
                 default: return 'bg-secondary';
             }

@@ -180,11 +180,11 @@
                         </div>
                     </div>
                     <div class="col">
-                        <div class="stat-card cancelled">
-                            <div class="stat-icon"><i class="fas fa-ban"></i></div>
+                        <div class="stat-card feedback-pending">
+                            <div class="stat-icon bg-info text-white rounded-circle"><i class="fas fa-star"></i></div>
                             <div class="stat-details">
-                                <h3 id="cancelledCount">0</h3>
-                                <p>Cancelled</p>
+                                <h3 id="feedbackPendingCount">0</h3>
+                                <p>Feedback Pending</p>
                             </div>
                         </div>
                     </div>

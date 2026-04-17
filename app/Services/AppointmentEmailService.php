@@ -693,6 +693,157 @@ class AppointmentEmailService
     }
 
     /**
+     * Send feedback reminder notification to student
+     * 
+     * @param string $studentId The student ID
+     * @param array $data The data including student_name, counselor_name, appointment_date, appointment_time, feedback_link
+     * @return bool True if email sent successfully, false otherwise
+     */
+    public function sendFeedbackReminderNotification(string $studentId, array $data): bool
+    {
+        try {
+            log_message('info', 'Sending feedback reminder notification to student: ' . $studentId);
+            
+            // Get student email
+            $studentEmail = $this->getStudentEmail($studentId);
+            if (!$studentEmail) {
+                log_message('error', 'Student email not found for ID: ' . $studentId);
+                return false;
+            }
+
+            // Clear previous recipients
+            $this->mailer->clearAddresses();
+            
+            // Add recipient
+            $this->mailer->addAddress($studentEmail);
+            
+            // Set email content
+            $this->mailer->isHTML(true);
+            $this->mailer->Subject = 'Feedback Reminder - ' . $this->emailConfig->fromName;
+            $this->mailer->Body = $this->createFeedbackReminderEmailBody($data);
+            $this->mailer->AltBody = $this->createFeedbackReminderEmailTextBody($data);
+
+            // Send email
+            $result = $this->mailer->send();
+            
+            if ($result) {
+                log_message('info', 'Feedback reminder notification sent successfully to: ' . $studentEmail);
+                return true;
+            } else {
+                log_message('error', 'Failed to send feedback reminder notification to: ' . $studentEmail);
+                log_message('error', 'PHPMailer ErrorInfo: ' . $this->mailer->ErrorInfo);
+                return false;
+            }
+
+        } catch (Exception $e) {
+            log_message('error', 'Error sending feedback reminder notification: ' . $e->getMessage());
+            log_message('error', 'PHPMailer ErrorInfo: ' . $this->mailer->ErrorInfo);
+            return false;
+        }
+    }
+
+    /**
+     * Create HTML email body for feedback reminder notification
+     * 
+     * @param array $data The data including student_name, counselor_name, appointment_date, appointment_time, feedback_link
+     * @return string The HTML email body
+     */
+    private function createFeedbackReminderEmailBody(array $data): string
+    {
+        $studentName = $data['student_name'] ?? 'Student';
+        $counselorName = $data['counselor_name'] ?? 'Counselor';
+        $appointmentDate = $data['appointment_date'] ?? 'N/A';
+        $appointmentTime = $data['appointment_time'] ?? 'N/A';
+        $feedbackLink = $data['feedback_link'] ?? '#';
+
+        return "
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='UTF-8'>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #060E57; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                .content { background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
+                .appointment-details { background-color: white; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #060E57; }
+                .reminder-box { background-color: #fff3cd; border: 2px solid #ffc107; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; }
+                .btn { display: inline-block; background-color: #060E57; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px; }
+                .btn:hover { background-color: #0a1a8a; }
+                .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+                .label { font-weight: bold; color: #060E57; }
+                .value { margin-left: 10px; }
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <div class='header'>
+                    <h2>📋 Feedback Reminder</h2>
+                    <p>Counselign - The USTP Guidance Counseling Sanctuary</p>
+                </div>
+                
+                <div class='content'>
+                    <p>Dear {$studentName},</p>
+                    
+                    <div class='reminder-box'>
+                        <h3>⏰ Reminder: Please Complete Your Feedback</h3>
+                        <p>Your appointment with <strong>{$counselorName}</strong> has been completed, but we haven't received your feedback yet.</p>
+                        <p>Your feedback helps us improve our counseling services and provide better support to students like you.</p>
+                        <a href='{$feedbackLink}' class='btn'>Complete Feedback Now</a>
+                    </div>
+                    
+                    <div class='appointment-details'>
+                        <h3>📋 Appointment Details</h3>
+                        <p><span class='label'>Date:</span><span class='value'>{$appointmentDate}</span></p>
+                        <p><span class='label'>Time:</span><span class='value'>{$appointmentTime}</span></p>
+                        <p><span class='label'>Counselor:</span><span class='value'>{$counselorName}</span></p>
+                    </div>
+                    
+                    <p>Thank you for taking the time to provide your feedback!</p>
+                    <p>Best regards,<br>Counselign Team</p>
+                </div>
+                
+                <div class='footer'>
+                    <p>This is an automated reminder from Counselign - The USTP Guidance Counseling Sanctuary.</p>
+                    <p>Please do not reply to this email.</p>
+                </div>
+            </div>
+        </body>
+        </html>";
+    }
+
+    /**
+     * Create plain text email body for feedback reminder notification
+     * 
+     * @param array $data The data including student_name, counselor_name, appointment_date, appointment_time, feedback_link
+     * @return string The plain text email body
+     */
+    private function createFeedbackReminderEmailTextBody(array $data): string
+    {
+        $studentName = $data['student_name'] ?? 'Student';
+        $counselorName = $data['counselor_name'] ?? 'Counselor';
+        $appointmentDate = $data['appointment_date'] ?? 'N/A';
+        $appointmentTime = $data['appointment_time'] ?? 'N/A';
+        $feedbackLink = $data['feedback_link'] ?? '#';
+
+        return "FEEDBACK REMINDER\n\n" .
+               "Dear {$studentName},\n\n" .
+               "Reminder: Please Complete Your Feedback\n\n" .
+               "Your appointment with {$counselorName} has been completed, but we haven't received your feedback yet.\n" .
+               "Your feedback helps us improve our counseling services and provide better support to students like you.\n\n" .
+               "APPOINTMENT DETAILS:\n" .
+               "Date: {$appointmentDate}\n" .
+               "Time: {$appointmentTime}\n" .
+               "Counselor: {$counselorName}\n\n" .
+               "Please complete your feedback at: {$feedbackLink}\n\n" .
+               "Thank you for taking the time to provide your feedback!\n\n" .
+               "Best regards,\n" .
+               "Counselign Team\n\n" .
+               "This is an automated reminder from Counselign - The USTP Guidance Counseling Sanctuary.\n" .
+               "Please do not reply to this email.";
+    }
+
+    /**
      * Send appointment cancellation notification to student
      * 
      * @param string $studentId The student ID
@@ -996,6 +1147,76 @@ class AppointmentEmailService
 
         } catch (Exception $e) {
             log_message('error', 'Error sending follow-up cancelled notification: ' . $e->getMessage());
+            log_message('error', 'PHPMailer ErrorInfo: ' . $this->mailer->ErrorInfo);
+            return false;
+        }
+    }
+
+    /**
+     * Send feedback notification email to student
+     */
+    public function sendFeedbackNotification(string $studentEmail, array $data): bool
+    {
+        try {
+            $this->mailer->clearAddresses();
+            $this->mailer->addAddress($studentEmail);
+
+            $this->mailer->isHTML(true);
+            $this->mailer->Subject = 'Feedback Required - Counseling Session Completed';
+
+            $htmlContent = "
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;'>
+                        <h2 style='margin: 0; font-size: 24px;'>Session Feedback Required</h2>
+                    </div>
+                    <div style='background: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+                        <p style='font-size: 16px; color: #333; margin-bottom: 20px;'>Dear {$data['student_name']},</p>
+
+                        <p style='font-size: 16px; color: #333; margin-bottom: 20px;'>
+                            Your counseling session with {$data['counselor_name']} on {$data['appointment_date']} at {$data['appointment_time']} has been completed.
+                        </p>
+
+                        <p style='font-size: 16px; color: #333; margin-bottom: 20px;'>
+                            Your feedback is important to us! Please take a few minutes to share your experience by visiting the appointment scheduling page.
+                        </p>
+
+                        <div style='text-align: center; margin: 30px 0;'>
+                            <a href='{$data['feedback_link']}' style='background: #28a745; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;'>
+                                Provide Feedback
+                            </a>
+                        </div>
+
+                        <p style='font-size: 14px; color: #666; margin-bottom: 20px;'>
+                            <strong>Important:</strong> You must submit feedback before you can schedule new appointments.
+                        </p>
+
+                        <p style='font-size: 14px; color: #666; margin-bottom: 0;'>
+                            Thank you for helping us improve our counseling services!
+                        </p>
+
+                        <hr style='border: none; border-top: 1px solid #eee; margin: 30px 0;'>
+
+                        <p style='font-size: 12px; color: #999; text-align: center; margin: 0;'>
+                            This is an automated message from Counselign. Please do not reply to this email.
+                        </p>
+                    </div>
+                </div>
+            ";
+
+            $this->mailer->Body = $htmlContent;
+            $this->mailer->AltBody = strip_tags(str_replace(['<br>', '</p>'], ["\n", "\n\n"], $htmlContent));
+
+            if ($this->mailer->send()) {
+                log_message('info', 'Feedback notification sent successfully to: ' . $studentEmail);
+                return true;
+            } else {
+                log_message('error', 'Failed to send feedback notification to: ' . $studentEmail);
+                log_message('error', 'PHPMailer ErrorInfo: ' . $this->mailer->ErrorInfo);
+                return false;
+            }
+
+        } catch (Exception $e) {
+            log_message('error', 'Error sending feedback notification: ' . $e->getMessage());
             log_message('error', 'PHPMailer ErrorInfo: ' . $this->mailer->ErrorInfo);
             return false;
         }

@@ -49,7 +49,7 @@ class AppointmentModel extends BaseModel
         'counselor_preference' => 'permit_empty|max_length[100]',
         'description' => 'permit_empty',
         'reason' => 'permit_empty',
-        'status' => 'permit_empty|in_list[pending,approved,rescheduled,completed,cancelled]',
+        'status' => 'permit_empty|in_list[pending,approved,rejected,rescheduled,completed,cancelled]',
         'purpose' => 'required|in_list[Counseling,Psycho-Social Support,Initial Interview]'
     ];
 
@@ -71,7 +71,7 @@ class AppointmentModel extends BaseModel
             'required' => 'Consultation type is required'
         ],
         'status' => [
-            'in_list' => 'Invalid status. Must be: pending, approved, rejected, completed, or cancelled'
+            'in_list' => 'Invalid status. Must be: pending, approved, rejected, rescheduled, completed, or cancelled'
         ],
         'purpose' => [
             'required' => 'Purpose of consultation is required',
@@ -254,12 +254,12 @@ class AppointmentModel extends BaseModel
      */
     public function updateStatus(int $appointmentId, string $status): bool
     {
-        $validStatuses = ['pending', 'approved', 'rejected', 'completed', 'cancelled'];
-        
+        $validStatuses = ['pending', 'approved', 'rejected', 'rescheduled', 'completed', 'cancelled'];
+
         if (!in_array($status, $validStatuses)) {
             return false;
         }
-        
+
         return $this->update($appointmentId, ['status' => $status]);
     }
 
@@ -276,13 +276,24 @@ class AppointmentModel extends BaseModel
 
     /**
      * Reject appointment
-     * 
+     *
      * @param int $appointmentId
      * @return bool
      */
     public function reject(int $appointmentId): bool
     {
         return $this->updateStatus($appointmentId, 'rejected');
+    }
+
+    /**
+     * Reschedule appointment
+     *
+     * @param int $appointmentId
+     * @return bool
+     */
+    public function reschedule(int $appointmentId): bool
+    {
+        return $this->updateStatus($appointmentId, 'rescheduled');
     }
 
     /**
@@ -313,13 +324,26 @@ class AppointmentModel extends BaseModel
 	 * @param string $studentId
 	 * @return bool
 	 */
-	public function hasApprovedAppointment(string $studentId): bool
-	{
-		return $this->where('student_id', $studentId)
-					->where('status', 'approved')
-					->where('preferred_date >=', date('Y-m-d'))
-					->countAllResults() > 0;
-	}
+ 	public function hasApprovedAppointment(string $studentId): bool
+ 	{
+ 		return $this->where('student_id', $studentId)
+ 					->where('status', 'approved')
+ 					->where('preferred_date >=', date('Y-m-d'))
+ 					->countAllResults() > 0;
+ 	}
+
+ 	/**
+ 	 * Check if student has feedback pending appointment
+ 	 *
+ 	 * @param string $studentId
+ 	 * @return bool
+ 	 */
+ 	public function hasFeedbackPendingAppointment(string $studentId): bool
+ 	{
+ 		return $this->where('student_id', $studentId)
+ 					->where('status', 'feedback_pending')
+ 					->countAllResults() > 0;
+ 	}
 
 	/**
 	 * Check if student has pending appointment
@@ -382,6 +406,7 @@ class AppointmentModel extends BaseModel
             'approved' => $this->where('student_id', $studentId)->where('status', 'approved')->countAllResults(),
             'completed' => $this->where('student_id', $studentId)->where('status', 'completed')->countAllResults(),
             'rejected' => $this->where('student_id', $studentId)->where('status', 'rejected')->countAllResults(),
+            'rescheduled' => $this->where('student_id', $studentId)->where('status', 'rescheduled')->countAllResults(),
             'cancelled' => $this->where('student_id', $studentId)->where('status', 'cancelled')->countAllResults()
         ];
     }
@@ -399,6 +424,7 @@ class AppointmentModel extends BaseModel
             'approved' => $this->where('status', 'approved')->countAllResults(),
             'completed' => $this->where('status', 'completed')->countAllResults(),
             'rejected' => $this->where('status', 'rejected')->countAllResults(),
+            'rescheduled' => $this->where('status', 'rescheduled')->countAllResults(),
             'cancelled' => $this->where('status', 'cancelled')->countAllResults(),
             'today' => $this->where('preferred_date', date('Y-m-d'))->countAllResults(),
             'this_week' => $this->where('preferred_date >=', date('Y-m-d', strtotime('monday this week')))
@@ -468,8 +494,8 @@ class AppointmentModel extends BaseModel
     }
 
     /**
-     * Delete old cancelled/rejected appointments (cleanup)
-     * 
+     * Delete old cancelled/rejected/rescheduled appointments (cleanup)
+     *
      * @param int $daysOld Number of days old
      * @return int Number of deleted records
      */
@@ -478,7 +504,7 @@ class AppointmentModel extends BaseModel
         $cutoffDate = date('Y-m-d', strtotime("-{$daysOld} days"));
         
         $builder = $this->builder();
-        $builder->whereIn('status', ['cancelled', 'rejected'])
+        $builder->whereIn('status', ['cancelled', 'rejected', 'rescheduled'])
                 ->where('updated_at <', $cutoffDate);
         
         return $builder->delete();
@@ -739,7 +765,7 @@ class AppointmentModel extends BaseModel
     public function updateStatusAtomic(int $appointmentId, string $newStatus, ?string $reason = null, array $options = []): array
     {
         // Validate status change
-        $validStatuses = ['pending', 'approved', 'rejected', 'completed', 'cancelled'];
+        $validStatuses = ['pending', 'approved', 'rejected', 'rescheduled', 'completed', 'cancelled'];
         if (!in_array($newStatus, $validStatuses)) {
             throw new \Exception('Invalid appointment status: ' . $newStatus);
         }
@@ -914,8 +940,9 @@ class AppointmentModel extends BaseModel
         // Define allowed status transitions
         $allowedTransitions = [
             'pending' => ['approved', 'rejected'],
-            'approved' => ['completed', 'cancelled'],
+            'approved' => ['completed', 'cancelled', 'rescheduled'],
             'rejected' => [], // Terminal state
+            'rescheduled' => [], // Terminal state
             'completed' => [], // Terminal state
             'cancelled' => [] // Terminal state
         ];

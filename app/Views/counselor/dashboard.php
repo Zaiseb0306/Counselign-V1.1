@@ -39,6 +39,10 @@
                     <i class="fas fa-calendar-alt"></i>
                     <span class="sidebar-text">Scheduled Appointments</span>
                 </a>
+                <a href="<?= base_url('counselor/pending-feedback') ?>" class="sidebar-link" title="Pending Feedback">
+                    <i class="fas fa-star"></i>
+                    <span class="sidebar-text">Pending Feedback</span>
+                </a>
                 <a href="<?= base_url('counselor/follow-up') ?>" class="sidebar-link" title="Follow-up Sessions">
                     <i class="fas fa-clipboard-list"></i>
                     <span class="sidebar-text">Follow-up Sessions</span>
@@ -165,17 +169,18 @@
             <div class="wave"></div>
         </div>
 
-        <!-- Add this section after line 129 in dashboard.php, after the </div> that closes the row with Messages and Appointments -->
-
-
-
         <!-- Notifications Dropdown -->
         <div id="notificationsDropdown" class="absolute bg-white rounded-lg shadow-lg border">
             <div class="p-3 border-b border-gray-200 flex justify-between items-center">
                 <h3 class="text-lg font-bold text-blue-800">Notifications</h3>
-                <button id="markAllReadBtn" class="btn btn-sm btn-outline-primary" title="Mark all as read">
-                    <i class="fas fa-check-double"></i> Clear All
-                </button>
+                <div class="d-flex gap-2">
+                    <button id="seeHistoryBtn" class="btn btn-sm btn-outline-secondary" title="See History">
+                        <i class="fas fa-history"></i> History
+                    </button>
+                    <button id="markAllReadBtn" class="btn btn-sm btn-outline-primary" title="Mark all as read">
+                        <i class="fas fa-check-double"></i> Clear All
+                    </button>
+                </div>
             </div>
             <div class="notifications-list max-h-64 overflow-y-auto">
                 <!-- Notifications will be dynamically populated here -->

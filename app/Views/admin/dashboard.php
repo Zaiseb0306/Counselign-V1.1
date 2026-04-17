@@ -219,11 +219,11 @@
                         </div>
                     </div>
                     <div class="col-md-2">
-                        <div class="stat-card cancelled">
-                            <div class="stat-icon"><i class="fas fa-ban"></i></div>
+                        <div class="stat-card feedback-pending">
+                            <div class="stat-icon bg-info text-white rounded-circle"><i class="fas fa-star"></i></div>
                             <div class="stat-details">
-                                <h3 id="cancelledCount">0</h3>
-                                <p>Cancelled</p>
+                                <h3 id="feedbackPendingCount">0</h3>
+                                <p>Feedback Pending</p>
                             </div>
                         </div>
                     </div>
@@ -293,9 +293,9 @@
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled"
+                                <button class="nav-link" id="feedback-pending-tab" data-bs-toggle="tab" data-bs-target="#feedback-pending"
                                     type="button">
-                                    <i class="fas fa-ban"></i><span class="tab-text"> Cancelled</span>
+                                    <i class="fas fa-star"></i><span class="tab-text"> Feedback Pending</span>
                                 </button>
                             </li>
                         </ul>
@@ -461,151 +461,180 @@
                                 No appointments found.
                             </div>
 
-                            <!-- All Appointments Tab -->
-                            <div class="tab-pane fade show active" id="all" role="tabpanel">
-                                <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
-                                    <table class="table table-hover mb-0" style="min-width: 1250px;">
-                                        <thead class="table-light sticky-top">
-                                            <tr>
-                                                <th>User ID</th>
-                                                <th>Full Name</th>
-                                                <th>Date</th>
-                                                <th>Time</th>
-                                                <th>Method Type</th>
-                                                <th>Consultation Type</th>
-                                                <th>Session Type</th>
-                                                <th>Purpose</th>
-                                                <th>Counselor</th>
-                                                <th>Status</th>
-                                                <th style="width: 60%;">Reason for Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="allAppointmentsTable">
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                             <!-- All Appointments Tab -->
+                             <div class="tab-pane fade show active" id="all" role="tabpanel">
+                                 <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
+                                     <table class="table table-hover mb-0" style="min-width: 1250px;">
+                                         <thead class="table-light sticky-top">
+                                             <tr>
+                                                 <th>User ID</th>
+                                                 <th>Full Name</th>
+                                                 <th>Date</th>
+                                                 <th>Time</th>
+                                                 <th>Method Type</th>
+                                                 <th>Consultation Type</th>
+                                                 <th>Session Type</th>
+                                                 <th>Purpose</th>
+                                                 <th>Student Concern</th>
+                                                 <th>Counselor Remarks</th>
+                                                 <th>Counselor</th>
+                                                 <th>Student Feedbacks</th>
+                                                 <th>Mean</th>
+                                                 <th>Interpretation</th>
+                                                 <th>Status</th>
+                                                 <th style="width: 60%;">Reason for Status</th>
+                                             </tr>
+                                         </thead>
+                                         <tbody id="allAppointmentsTable">
+                                         </tbody>
+                                     </table>
+                                 </div>
+                             </div>
 
-                            <!-- Approved Appointments Tab -->
-                            <div class="tab-pane fade" id="approved" role="tabpanel">
-                                <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
-                                    <table class="table table-hover mb-0" style="min-width: 1250px;">
-                                        <thead class="table-light sticky-top">
-                                            <tr>
-                                                <th>User ID</th>
-                                                <th>Full Name</th>
-                                                <th>Date</th>
-                                                <th>Time</th>
-                                                <th>Method Type</th>
-                                                <th>Consultation Type</th>
-                                                <th>Session Type</th>
-                                                <th>Purpose</th>
-                                                <th>Counselor</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="approvedAppointmentsTable">
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                             <!-- Approved Appointments Tab -->
+                             <div class="tab-pane fade" id="approved" role="tabpanel">
+                                 <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
+                                     <table class="table table-hover mb-0" style="min-width: 1250px;">
+                                         <thead class="table-light sticky-top">
+                                             <tr>
+                                                 <th>User ID</th>
+                                                 <th>Full Name</th>
+                                                 <th>Date</th>
+                                                 <th>Time</th>
+                                                 <th>Method Type</th>
+                                                 <th>Consultation Type</th>
+                                                 <th>Session Type</th>
+                                                 <th>Purpose</th>
+                                                 <th>Student Concern</th>
+                                                 <th>Counselor Remarks</th>
+                                                 <th>Counselor</th>
+                                                 <th>Student Feedbacks</th>
+                                                 <th>Mean</th>
+                                                 <th>Interpretation</th>
+                                                 <th>Status</th>
+                                             </tr>
+                                         </thead>
+                                         <tbody id="approvedAppointmentsTable">
+                                         </tbody>
+                                     </table>
+                                 </div>
+                             </div>
 
-                            <!-- Rescheduled Appointments Tab -->
-                            <div class="tab-pane fade" id="rescheduled" role="tabpanel">
-                                <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
-                                    <table class="table table-hover mb-0" style="min-width: 1250px;">
-                                        <thead class="table-light sticky-top">
-                                            <tr>
-                                                <th>User ID</th>
-                                                <th>Full Name</th>
-                                                <th>Date</th>
-                                                <th>Time</th>
-                                                <th>Method Type</th>
-                                                <th>Consultation Type</th>
-                                                <th>Session Type</th>
-                                                <th>Purpose</th>
-                                                <th>Counselor</th>
-                                                <th>Status</th>
-                                                <th style="width: 60%;">Reason for Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="rescheduledAppointmentsTable">
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                             <!-- Rescheduled Appointments Tab -->
+                             <div class="tab-pane fade" id="rescheduled" role="tabpanel">
+                                 <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
+                                     <table class="table table-hover mb-0" style="min-width: 1250px;">
+                                         <thead class="table-light sticky-top">
+                                             <tr>
+                                                 <th>User ID</th>
+                                                 <th>Full Name</th>
+                                                 <th>Date</th>
+                                                 <th>Time</th>
+                                                 <th>Method Type</th>
+                                                 <th>Consultation Type</th>
+                                                 <th>Session Type</th>
+                                                 <th>Purpose</th>
+                                                 <th>Student Concern</th>
+                                                 <th>Counselor Remarks</th>
+                                                 <th>Counselor</th>
+                                                 <th>Student Feedbacks</th>
+                                                 <th>Mean</th>
+                                                 <th>Interpretation</th>
+                                                 <th>Status</th>
+                                                 <th style="width: 60%;">Reason for Status</th>
+                                             </tr>
+                                         </thead>
+                                         <tbody id="rescheduledAppointmentsTable">
+                                         </tbody>
+                                     </table>
+                                 </div>
+                             </div>
 
-                            <!-- Completed Appointments Tab -->
-                            <div class="tab-pane fade" id="completed" role="tabpanel">
-                                <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
-                                    <table class="table table-hover mb-0" style="min-width: 1250px;">
-                                        <thead class="table-light sticky-top">
-                                            <tr>
-                                                <th>User ID</th>
-                                                <th>Full Name</th>
-                                                <th>Date</th>
-                                                <th>Time</th>
-                                                <th>Method Type</th>
-                                                <th>Consultation Type</th>
-                                                <th>Session Type</th>
-                                                <th>Purpose</th>
-                                                <th>Counselor</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="completedAppointmentsTable">
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                             <!-- Completed Appointments Tab -->
+                             <div class="tab-pane fade" id="completed" role="tabpanel">
+                                 <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
+                                     <table class="table table-hover mb-0" style="min-width: 1250px;">
+                                         <thead class="table-light sticky-top">
+                                             <tr>
+                                                 <th>User ID</th>
+                                                 <th>Full Name</th>
+                                                 <th>Date</th>
+                                                 <th>Time</th>
+                                                 <th>Method Type</th>
+                                                 <th>Consultation Type</th>
+                                                 <th>Session Type</th>
+                                                 <th>Purpose</th>
+                                                 <th>Student Concern</th>
+                                                 <th>Counselor Remarks</th>
+                                                 <th>Counselor</th>
+                                                 <th>Student Feedbacks</th>
+                                                 <th>Mean</th>
+                                                 <th>Interpretation</th>
+                                                 <th>Status</th>
+                                             </tr>
+                                         </thead>
+                                         <tbody id="completedAppointmentsTable">
+                                         </tbody>
+                                     </table>
+                                 </div>
+                             </div>
 
-                            <!-- Cancelled Appointments Tab -->
-                            <div class="tab-pane fade" id="cancelled" role="tabpanel">
-                                <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
-                                    <table class="table table-hover mb-0" style="min-width: 1250px;">
-                                        <thead class="table-light sticky-top">
-                                            <tr>
-                                                <th>User ID</th>
-                                                <th>Full Name</th>
-                                                <th>Date</th>
-                                                <th>Time</th>
-                                                <th>Method Type</th>
-                                                <th>Consultation Type</th>
-                                                <th>Session Type</th>
-                                                <th>Purpose</th>
-                                                <th>Counselor</th>
-                                                <th>Status</th>
-                                                <th style="width: 60%;">Reason for Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="cancelledAppointmentsTable">
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <!-- Follow-up Appointments Tab -->
-                            <div class="tab-pane fade" id="followup" role="tabpanel">
-                                <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
-                                    <table class="table table-hover mb-0" style="min-width: 1250px;">
-                                        <thead class="table-light sticky-top">
-                                            <tr>
-                                                <th>User ID</th>
-                                                <th>Full Name</th>
-                                                <th>Date</th>
-                                                <th>Time</th>
-                                                <th>Method Type</th>
-                                                <th>Consultation Type</th>
-                                                <th>Session Type</th>
-                                                <th>Purpose</th>
-                                                <th>Counselor</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="followUpAppointmentsTable">
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                             <!-- Feedback Pending Appointments Tab -->
+                             <div class="tab-pane fade" id="feedback-pending" role="tabpanel">
+                                 <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
+                                     <table class="table table-hover mb-0" style="min-width: 1250px;">
+                                         <thead class="table-light sticky-top">
+                                             <tr>
+                                                 <th>User ID</th>
+                                                 <th>Full Name</th>
+                                                 <th>Date</th>
+                                                 <th>Time</th>
+                                                 <th>Method Type</th>
+                                                 <th>Consultation Type</th>
+                                                 <th>Session Type</th>
+                                                 <th>Purpose</th>
+                                                 <th>Student Concern</th>
+                                                 <th>Counselor Remarks</th>
+                                                 <th>Counselor</th>
+                                                 <th>Student Feedbacks</th>
+                                                 <th>Mean</th>
+                                                 <th>Interpretation</th>
+                                                 <th>Status</th>
+                                             </tr>
+                                         </thead>
+                                         <tbody id="feedbackPendingAppointmentsTable">
+                                         </tbody>
+                                     </table>
+                                 </div>
+                             </div>
+                             <!-- Follow-up Appointments Tab -->
+                             <div class="tab-pane fade" id="followup" role="tabpanel">
+                                 <div class="table-responsive" style="max-height: 500px; overflow-y: auto; overflow-x: auto;">
+                                     <table class="table table-hover mb-0" style="min-width: 1250px;">
+                                         <thead class="table-light sticky-top">
+                                             <tr>
+                                                 <th>User ID</th>
+                                                 <th>Full Name</th>
+                                                 <th>Date</th>
+                                                 <th>Time</th>
+                                                 <th>Method Type</th>
+                                                 <th>Consultation Type</th>
+                                                 <th>Session Type</th>
+                                                 <th>Purpose</th>
+                                                 <th>Student Concern</th>
+                                                 <th>Counselor Remarks</th>
+                                                 <th>Counselor</th>
+                                                 <th>Student Feedbacks</th>
+                                                 <th>Mean</th>
+                                                 <th>Interpretation</th>
+                                                 <th>Status</th>
+                                             </tr>
+                                         </thead>
+                                         <tbody id="followUpAppointmentsTable">
+                                         </tbody>
+                                     </table>
+                                 </div>
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -756,6 +785,37 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Details Modal -->
+    <div class="modal fade" id="viewDetailsModal" tabindex="-1" aria-labelledby="viewDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0; border: none;">
+                    <h5 class="modal-title" id="viewDetailsModalLabel" style="font-weight: 600;">
+                        <i class="fas fa-info-circle me-2"></i>Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 2rem;">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" style="color: #667eea; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Student Name</label>
+                        <p id="modalStudentName" class="form-control-plaintext" style="font-size: 1.1rem; color: #333; font-weight: 500;"></p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" style="color: #667eea; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Date & Time</label>
+                        <p id="modalDateTime" class="form-control-plaintext" style="font-size: 1.1rem; color: #333; font-weight: 500;"></p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold" style="color: #667eea; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Details</label>
+                        <div id="modalDetails" class="form-control-plaintext bg-light p-4 rounded" style="font-size: 1rem; color: #555; line-height: 1.6; background-color: #f8f9fa; border-left: 4px solid #667eea;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="padding: 0.6rem 1.5rem; border-radius: 8px; font-weight: 500;">Close</button>
                 </div>
             </div>
         </div>

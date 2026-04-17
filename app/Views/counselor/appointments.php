@@ -35,6 +35,10 @@
                     <i class="fas fa-calendar-alt"></i>
                     <span class="sidebar-text">Scheduled Appointments</span>
                 </a>
+                <a href="<?= base_url('counselor/pending-feedback') ?>" class="sidebar-link" title="Pending Feedback">
+                    <i class="fas fa-star"></i>
+                    <span class="sidebar-text">Pending Feedback</span>
+                </a>
                 <a href="<?= base_url('counselor/follow-up') ?>" class="sidebar-link" title="Follow-up Sessions">
                     <i class="fas fa-clipboard-list"></i>
                     <span class="sidebar-text">Follow-up Sessions</span>
@@ -181,11 +185,11 @@
                             <div class="status-card-body p-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="status-title">Cancelled</h6>
-                                        <h3 class="status-count" id="cancelledCount">-</h3>
+                                        <h6 class="status-title">Feedback Pending</h6>
+                                        <h3 class="status-count" id="feedbackPendingCount">-</h3>
                                     </div>
-                                    <div class="status-icon bg-secondary text-white rounded-circle">
-                                        <i class="fas fa-ban"></i>
+                                    <div class="status-icon bg-info text-white rounded-circle">
+                                        <i class="fas fa-star"></i>
                                     </div>
                                 </div>
                             </div>
@@ -213,7 +217,7 @@
                                 <option value="approved">Approved</option>
                                 <option value="rescheduled">Rescheduled</option>
                                 <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
+                                <option value="feedback_pending">Feedback Pending</option>
                             </select>
                         </div>
                     </div>
@@ -354,7 +358,7 @@
                 <div class="modal-footer appointment-modal-footer justify-content-between">
                     <div>
                         <button type="button" class="btn btn-warning btn-sm" id="rescheduleAppointmentBtn">
-                            <i class="fas fa-calendar-alt me-1"></i> Re-schedule
+                            <i class="fas fa-calendar-alt me-1"></i> Reschedule
                         </button>
                     </div>
                     <div>
@@ -373,12 +377,12 @@
             <div class="modal-content">
                 <div class="modal-header bg-warning">
                     <h5 class="modal-title" id="rescheduleModalLabel">
-                        <i class="fas fa-calendar-alt me-2"></i>Re-schedule Appointment
+                        <i class="fas fa-calendar-alt me-2"></i>Reschedule Appointment
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="rescheduleForm">
+                <div class="modal-body" style="padding: 1rem;">
+                    <form id="rescheduleForm" style="display: flex; flex-direction: column;">
                         <div class="mb-3">
                             <label for="rescheduleDate" class="form-label fw-bold">New Date:</label>
                             <input type="date" class="form-control" id="rescheduleDate" required>

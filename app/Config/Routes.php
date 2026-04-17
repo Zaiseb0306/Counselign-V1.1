@@ -52,8 +52,9 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
     $routes->get('appointments/scheduled', 'Appointments::scheduled');
     $routes->get('appointments/scheduled/get', 'Appointments::getScheduledAppointments');
     $routes->get('appointments/latest', 'Appointments::getLatest');
-    $routes->get('appointments/getAll', 'Appointments::getAppointments');
-    $routes->get('appointments/getAppointments', 'Appointments::getAppointments');
+    $routes->get('appointments/getAll', 'Appointments::getAll');
+    $routes->get('appointments/getAppointments', 'Appointments::getAll');
+    $routes->get('appointments/get_all_appointments', 'GetAllAppointments::index');
     $routes->post('appointments/updateStatus', 'Appointments::updateStatus');
     $routes->post('appointments/updateAppointmentStatus', 'Appointments::updateAppointmentStatus');
     $routes->post('appointments/reschedule', 'Appointments::reschedule');
@@ -94,7 +95,7 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
     $routes->get('counselor-info/get-announcements', 'CounselorInfo::getAnnouncements');
     $routes->delete('counselor-info/delete-announcement/(:num)', 'CounselorInfo::deleteAnnouncement/$1');
     $routes->get('counselor-info/schedule', 'CounselorInfo::getCounselorSchedule');
-    $routes->get('appointments/get_all_appointments', 'GetAllAppointments::index');
+    $routes->get('feedback-analysis', 'GetFeedbackAnalysis::index');
     $routes->get('history-reports', 'HistoryReports::index');
     $routes->get('history-reports/data', 'HistoryReports::getHistoryData');
     $routes->get('history-reports/historical-data', 'HistoryReports::getHistoricalData');
@@ -118,6 +119,12 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin'], function ($rou
     $routes->delete('resources/delete/(:num)', 'Resources::delete/$1');
     $routes->get('resources/download/(:num)', 'Resources::download/$1');
     $routes->get('resources/categories', 'Resources::getCategories');
+
+    // Feedback Analytics endpoints
+    $routes->get('feedback-analytics', 'FeedbackAnalytics::index');
+    $routes->get('feedback-analytics/data', 'FeedbackAnalytics::getAnalyticsData');
+    $routes->get('feedback-analytics/export-pdf', 'FeedbackAnalytics::exportPDF');
+    $routes->get('feedback-analytics/export-excel', 'FeedbackAnalytics::exportExcel');
 });
 
 // Student routes
@@ -146,11 +153,16 @@ $routes->group('student', ['namespace' => 'App\Controllers\Student'], function (
     $routes->match(['POST', 'OPTIONS'], 'profile/picture', 'Profile::updateProfilePicture');
     $routes->post('appointment/save', 'Appointment::save');
     $routes->get('my-appointments', 'Appointment::viewAppointments');
+    $routes->get('feedback', 'Feedback::index');
+    $routes->post('feedback/submit', 'Feedback::submit');
 
     // Add notification routes
     $routes->get('notifications', 'Notifications::index');
     $routes->get('notifications/unread-count', 'Notifications::getUnreadCount');
     $routes->post('notifications/mark-read', 'Notifications::markAsRead');
+    $routes->get('notifications/history', 'Notifications::history');
+    $routes->get('notifications/get-history', 'Notifications::getHistory');
+    $routes->post('notifications/delete', 'Notifications::delete');
 
     $routes->get('appointments/get-my-appointments', 'Appointment::getMyAppointments');
     $routes->get('appointments/booked-times', 'Appointment::getBookedTimesForDate');
@@ -213,7 +225,10 @@ $routes->group('counselor', ['namespace' => 'App\Controllers\Counselor'], functi
     $routes->post('appointments/reschedule', 'Appointments::reschedule');
     $routes->post('appointments/track-export', 'Appointments::trackExport');
     $routes->get('appointments/schedule', 'Appointments::getCounselorSchedule');
-    $routes->get('follow-up', 'Appointments::followUp');
+    $routes->get('pending-feedback', 'PendingFeedback::index');
+    $routes->get('pending-feedback/get-appointments', 'PendingFeedback::getPendingFeedbackAppointments');
+    $routes->post('pending-feedback/send-reminder', 'PendingFeedback::sendReminderEmail');
+    $routes->get('follow-up', 'FollowUp::index');
 
     // Reports endpoints used by view-all and charts
     $routes->get('appointments/get_all_appointments', 'GetAllAppointments::index');
@@ -236,6 +251,9 @@ $routes->group('counselor', ['namespace' => 'App\Controllers\Counselor'], functi
     $routes->get('notifications', 'Notifications::index');
     $routes->get('notifications/unread-count', 'Notifications::getUnreadCount');
     $routes->post('notifications/mark-read', 'Notifications::markAsRead');
+    $routes->get('notifications/history', 'Notifications::history');
+    $routes->get('notifications/get-history', 'Notifications::getHistory');
+    $routes->post('notifications/delete', 'Notifications::delete');
 
     // Follow-up appointments routes
     $routes->get('follow-up', 'FollowUp::index');

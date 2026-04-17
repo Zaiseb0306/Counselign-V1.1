@@ -92,16 +92,18 @@ class Appointment extends BaseController
             $hasPending = $appointmentModel->hasPendingAppointment($userId);
             $hasApproved = $appointmentModel->hasApprovedAppointment($userId);
             $hasRescheduled = $appointmentModel->hasRescheduledAppointment($userId);
+            $hasFeedbackPending = $appointmentModel->hasFeedbackPendingAppointment($userId);
             $hasPendingFollowUp = $followUpModel->hasPendingFollowUp($userId);
 
-            // Allowed only when no pending, no approved upcoming, no rescheduled, and no pending follow-up
-            $allowed = !$hasPending && !$hasApproved && !$hasRescheduled && !$hasPendingFollowUp;
+            // Allowed only when no pending, no approved upcoming, no rescheduled, no feedback pending, and no pending follow-up
+            $allowed = !$hasPending && !$hasApproved && !$hasRescheduled && !$hasFeedbackPending && !$hasPendingFollowUp;
 
             return $this->response->setJSON([
                 'status' => 'success',
                 'hasPending' => $hasPending,
                 'hasApproved' => $hasApproved,
                 'hasRescheduled' => $hasRescheduled,
+                'hasFeedbackPending' => $hasFeedbackPending,
                 'hasPendingFollowUp' => $hasPendingFollowUp,
                 'allowed' => $allowed
             ]);

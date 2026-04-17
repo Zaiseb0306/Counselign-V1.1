@@ -6,7 +6,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": ["http://localhost", "http://localhost:80"]}})
 
-CODEIGNITER_API_BASE = "http://localhost/Counselign/public"
+CODEIGNITER_API_BASE = "http://localhost/Counselign/public/index.php"
 
 
 def build_codeigniter_cookies(codeigniter_response):
@@ -19,24 +19,54 @@ def build_codeigniter_cookies(codeigniter_response):
 
 
 def json_proxy_get(endpoint, params=None):
-    codeigniter_response = requests.get(
-        f"{CODEIGNITER_API_BASE}{endpoint}",
-        params=params or {},
-        cookies=request.cookies,
-        headers={
-            "Accept": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-        },
-        timeout=30,
-    )
+    try:
+        codeigniter_response = requests.get(
+            f"{CODEIGNITER_API_BASE}{endpoint}",
+            params=params or {},
+            cookies=request.cookies,
+            headers={
+                "Accept": "application/json",
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            timeout=30,
+        )
 
-    payload = codeigniter_response.json()
-    response = make_response(jsonify(payload), codeigniter_response.status_code)
+        # Check if response is JSON
+        if 'application/json' in codeigniter_response.headers.get('content-type', ''):
+            try:
+                payload = codeigniter_response.json()
+            except ValueError:
+                # Not valid JSON, return error
+                payload = {
+                    "success": False,
+                    "message": "Invalid JSON response from CodeIgniter",
+                    "raw_response": codeigniter_response.text[:500]  # First 500 chars
+                }
+        else:
+            # Not JSON response, return error
+            payload = {
+                "success": False,
+                "message": f"Non-JSON response from CodeIgniter (status: {codeigniter_response.status_code})",
+                "content_type": codeigniter_response.headers.get('content-type'),
+                "raw_response": codeigniter_response.text[:500]  # First 500 chars
+            }
 
-    for name, value in build_codeigniter_cookies(codeigniter_response).items():
-        response.set_cookie(name, value, httponly=True, samesite="Lax")
+        response = make_response(jsonify(payload), codeigniter_response.status_code)
 
-    return response
+        for name, value in build_codeigniter_cookies(codeigniter_response).items():
+            response.set_cookie(name, value, httponly=True, samesite="Lax")
+
+        return response
+    except requests.RequestException as e:
+        return jsonify({
+            "success": False,
+            "message": f"Request failed: {str(e)}"
+        }), 500
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "message": f"Unexpected error: {str(e)}"
+        }), 500
 
 
 @app.get("/health")

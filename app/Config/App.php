@@ -16,7 +16,7 @@ class App extends BaseConfig
      *
      * E.g., http://example.com/
      */
-    public string $baseURL = 'http://172.16.88.157/Counselign/public/';
+    public string $baseURL = 'http://10.65.77.105/Counselign/public/';
 
     /**
      * Get dynamic base URL based on current request

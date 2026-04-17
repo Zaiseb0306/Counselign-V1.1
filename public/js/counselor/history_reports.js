@@ -65,9 +65,9 @@ function initializeCharts() {
                     data: []
                 },
                 {
-                    label: 'Cancelled',
-                    borderColor: '#6c757d',
-                    backgroundColor: '#6c757d',
+                    label: 'Feedback Pending',
+                    borderColor: '#17a2b8',
+                    backgroundColor: '#17a2b8',
                     fill: false,
                     tension: 0.4,
                     data: []
@@ -116,10 +116,10 @@ function initializeCharts() {
     pieChart = new Chart(pieCtx, {
         type: 'doughnut',
         data: {
-            labels: ['Completed', 'Approved', 'Rescheduled', 'Pending', 'Cancelled'],
+            labels: ['Completed', 'Approved', 'Rescheduled', 'Pending', 'Feedback Pending'],
             datasets: [{
                 data: [0, 0, 0, 0, 0],
-                backgroundColor: ['#0d6efd', '#198754', '#FF8000', '#ffc107', '#6c757d'],
+                backgroundColor: ['#0d6efd', '#198754', '#FF8000', '#ffc107', '#17a2b8'],
                 borderWidth: 0,
                 cutout: '65%'
             }]
@@ -235,8 +235,8 @@ function updateCharts(data) {
     trendChart.data.datasets[1].data = data.approved || [];
     trendChart.data.datasets[2].data = data.rescheduled || [];
     trendChart.data.datasets[3].data = data.pending || [];
-    trendChart.data.datasets[4].data = data.cancelled || [];
-    
+    trendChart.data.datasets[4].data = data.feedback_pending || [];
+
     // Update chart title
     const monthName = new Date(document.getElementById('monthFilter').value + '-01')
         .toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -250,7 +250,7 @@ function updateCharts(data) {
         data.totalApproved || 0,
         data.totalRescheduled || 0,
         data.totalPending || 0,
-        data.totalCancelled || 0
+        data.totalFeedbackPending || 0
     ];
     pieChart.data.datasets[0].data = pieData;
     
@@ -269,7 +269,7 @@ function updateStatistics(data) {
     document.getElementById('approvedCount').textContent = data.totalApproved || 0;
     document.getElementById('rescheduledCount').textContent = data.totalRescheduled || 0;
     document.getElementById('pendingCount').textContent = data.totalPending || 0;
-    document.getElementById('cancelledCount').textContent = data.totalCancelled || 0;
+    document.getElementById('feedbackPendingCount').textContent = data.totalFeedbackPending || 0;
 }
 
 function resetStatistics() {
@@ -277,13 +277,13 @@ function resetStatistics() {
     document.getElementById('approvedCount').textContent = '0';
     document.getElementById('rescheduledCount').textContent = '0';
     document.getElementById('pendingCount').textContent = '0';
-    document.getElementById('cancelledCount').textContent = '0';
-    
+    document.getElementById('feedbackPendingCount').textContent = '0';
+
     if (trendChart && pieChart) {
         trendChart.data.labels = [];
         trendChart.data.datasets.forEach(dataset => dataset.data = []);
         trendChart.update();
-        
+
         pieChart.data.datasets[0].data = [0, 0, 0, 0, 0];
         pieChart.update();
     }

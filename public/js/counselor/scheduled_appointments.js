@@ -8,10 +8,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // Store original appointments data for search filtering
     let originalAppointments = [];
     let filteredAppointments = [];
+    let counselorAvailability = {};
 
     initSearchFunctionality();
     loadAppointments();
     loadCounselorSchedule();
+    loadCounselorAvailability();
 
     
 
@@ -114,6 +116,12 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch(url, { method: 'GET', credentials: 'include', headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-cache' }})
             .then(response => { if (!response.ok) throw new Error(response.status === 401 ? 'Session expired - Please log in again' : `Network error ${response.status}`); return response.json(); })
             .then(data => {
+                console.log('Loaded appointments:', data.appointments);
+                console.log('Debug info:', data.debug_info);
+                if (data.appointments && data.appointments.length > 0) {
+                    const statuses = data.appointments.map(app => app.status);
+                    console.log('Appointment statuses:', statuses);
+                }
                 if (data.status === 'success') {
                     if (Array.isArray(data.appointments) && data.appointments.length > 0) {
                         originalAppointments = data.appointments;
@@ -156,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function () {
         appointments.forEach(appointment => {
             const row = document.createElement('tr');
             row.dataset.id = appointment.id;
-            if (appointment.status === 'COMPLETED') { row.classList.add('table-success'); }
+            if ((appointment.status || '').toLowerCase() === 'completed') { row.classList.add('table-success'); }
             else {
                 const dateObj = new Date(appointment.appointed_date || appointment.preferred_date);
                 if (isToday(dateObj)) row.classList.add('table-primary');
@@ -170,16 +178,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const recordKind = appointment.record_kind || 'appointment';
             const actionHtml = (recordKind === 'follow_up')
                 ? '<span class="text-muted">Manage in Follow-up Sessions</span>'
-                : (appointment.status === 'COMPLETED' || appointment.status === 'CANCELLED'
+                : ((appointment.status || '').toLowerCase() === 'completed' || (appointment.status || '').toLowerCase() === 'cancelled'
                     ? '<span class="text-muted">No actions available</span>'
-                    : `<div class="btn-group" role="group">
+                    : `<div class="d-flex flex-column gap-1" role="group">
                         <button class="btn btn-sm btn-success mark-complete-btn" data-id="${appointment.id}"><i class="fas fa-check me-1"></i>Mark Complete</button>
-                        <button class="btn btn-sm btn-danger cancel-appointment-btn" data-id="${appointment.id}"><i class="fas fa-times me-1"></i>Cancel</button>
+                         <button class="btn btn-sm btn-warning reschedule-appointment-btn" data-id="${appointment.id}"><i class="fas fa-calendar-alt me-1"></i>Rescheduled</button>
                        </div>`);
 
             row.innerHTML = `
                 <td>${appointment.student_id || 'N/A'}</td>
-                <td>${appointment.student_name || 'N/A'}</td>
+                <td>${appointment.username || appointment.student_name || 'N/A'}</td>
                 <td>${formattedDate || 'Invalid Date'}</td>
                 <td>${formattedTime || 'N/A'}</td>
                 <td>${appointment.method_type || 'In-person'}</td>
@@ -187,29 +195,93 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${scheduleType}</td>
                 <td>${appointment.purpose || 'N/A'}</td>
                 <td class="text-center">
-                    ${appointment.status === 'COMPLETED' ? '<span class="badge bg-success">Completed</span>' : appointment.status === 'CANCELLED' ? '<span class="badge bg-danger">Cancelled</span>' : '<span class="badge bg-primary">Approved</span>'}
+                    ${(() => {
+                        const status = (appointment.status || '').toLowerCase();
+                        if (status === 'completed') return '<span class="badge bg-success">Completed</span>';
+                        if (status === 'cancelled') return '<span class="badge bg-danger">Cancelled</span>';
+                        if (status === 'rescheduled') return '<span class="badge bg-warning">Rescheduled</span>';
+                        if (status === 'approved') return '<span class="badge bg-primary">Approved</span>';
+                        return '<span class="badge bg-secondary">' + (appointment.status || 'Unknown') + '</span>';
+                    })()}
                 </td>
                 <td class="text-center">${actionHtml}</td>`;
             appointmentsBody.appendChild(row);
         });
 
-        document.querySelectorAll('.mark-complete-btn').forEach(btn => btn.addEventListener('click', function () { updateAppointmentStatus(this.getAttribute('data-id'), 'COMPLETED'); }));
-        document.querySelectorAll('.cancel-appointment-btn').forEach(btn => btn.addEventListener('click', function () { const id = this.getAttribute('data-id'); new bootstrap.Modal(document.getElementById('cancellationReasonModal'), { backdrop: 'static', keyboard: false }).show(); document.getElementById('cancellationReasonModal').dataset.appointmentId = id; }));
+        document.querySelectorAll('.mark-complete-btn').forEach(btn => btn.addEventListener('click', function () { showRemarksModal(this.getAttribute('data-id')); }));
 
-        document.getElementById('confirmCancellationBtn').addEventListener('click', function() {
-            const reason = document.getElementById('cancellationReason').value.trim();
-            if (!reason) { showToast('Error', 'Please provide a reason for cancellation.'); return; }
-            const appointmentId = document.getElementById('cancellationReasonModal').dataset.appointmentId;
-            const confirmBtn = document.getElementById('confirmCancellationBtn'); const original = confirmBtn.innerHTML; confirmBtn.disabled = true; confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-            const formData = new FormData(); formData.append('appointment_id', appointmentId); formData.append('status', 'CANCELLED'); formData.append('rejection_reason', reason);
-            fetch((window.BASE_URL || '/') + 'counselor/appointments/updateAppointmentStatus', { method:'POST', body: formData, credentials:'include', headers:{ 'X-Requested-With':'XMLHttpRequest' }})
+        // Handle remarks modal submission
+        document.getElementById('confirmCompleteBtn').addEventListener('click', function() {
+            const appointmentId = document.getElementById('remarksModal').dataset.appointmentId;
+            const remarks = document.getElementById('counselorRemarks').value.trim();
+
+            if (!remarks) {
+                showToast('Error', 'Please enter counselor remarks before marking as completed.');
+                return;
+            }
+
+            // Hide the modal
+            bootstrap.Modal.getInstance(document.getElementById('remarksModal')).hide();
+
+            // Update the appointment status with remarks
+            updateAppointmentStatus(appointmentId, 'COMPLETED', remarks);
+        });
+        document.querySelectorAll('.reschedule-appointment-btn').forEach(btn => btn.addEventListener('click', function () { const id = this.getAttribute('data-id'); new bootstrap.Modal(document.getElementById('rescheduleModal'), { backdrop: 'static', keyboard: false }).show(); document.getElementById('rescheduleModal').dataset.appointmentId = id; }));
+
+        document.getElementById('confirmRescheduleBtn').addEventListener('click', function() {
+            const rescheduleDate = document.getElementById('rescheduleDate').value;
+            const rescheduleTime = document.getElementById('rescheduleTime').value;
+            const rescheduleReason = document.getElementById('rescheduleReason').value.trim();
+            if (!rescheduleDate || !rescheduleTime || !rescheduleReason) { showToast('Error', 'Please fill in all fields.'); return; }
+            const appointmentId = document.getElementById('rescheduleModal').dataset.appointmentId;
+            const confirmBtn = document.getElementById('confirmRescheduleBtn'); const original = confirmBtn.innerHTML; confirmBtn.disabled = true; confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+            const formData = new FormData(); formData.append('appointment_id', appointmentId); formData.append('new_date', rescheduleDate); formData.append('new_time', rescheduleTime); formData.append('reason', rescheduleReason);
+            fetch((window.BASE_URL || '/') + 'counselor/appointments/reschedule', { method:'POST', body: formData, credentials:'include', headers:{ 'X-Requested-With':'XMLHttpRequest' }})
                 .then(r=>{ if(!r.ok) throw new Error(`Server error: ${r.status}`); return r.json(); })
-                .then(data=>{ if (data.status==='success'){ const m = bootstrap.Modal.getInstance(document.getElementById('cancellationReasonModal')); if (m) m.hide(); showToast('Success','Appointment cancelled successfully! An email notification has been sent to the user.'); loadAppointments(); } else { throw new Error(data.message||'Failed to cancel appointment'); } })
-                .catch(err=>{ showToast('Error', err.message||'An error occurred while cancelling the appointment.'); })
+                .then(data=>{ if (data.status==='success'){ const m = bootstrap.Modal.getInstance(document.getElementById('rescheduleModal')); if (m) m.hide(); showToast('Success','Appointment rescheduled successfully! An email notification has been sent to the user.'); loadAppointments(); } else { throw new Error(data.message||'Failed to reschedule appointment'); } })
+                .catch(err=>{ showToast('Error', err.message||'An error occurred while rescheduling the appointment.'); })
                 .finally(()=>{ confirmBtn.disabled = false; confirmBtn.innerHTML = original; });
         });
 
-        document.getElementById('cancellationReasonModal').addEventListener('hidden.bs.modal', function(){ document.getElementById('cancellationReason').value=''; delete this.dataset.appointmentId; });
+        const rescheduleDateEl = document.getElementById('rescheduleDate');
+        if (rescheduleDateEl) {
+            rescheduleDateEl.addEventListener('change', async function() {
+                try {
+                    await populateRescheduleTimeOptions(this.value);
+                } catch (error) {
+                    showToast('Error', error.message || 'Failed to load available times');
+                }
+            });
+        }
+
+        document.getElementById('rescheduleModal').addEventListener('show.bs.modal', async function(){
+            // Prevent page scrolling
+            document.body.style.overflow = 'hidden';
+
+            // Always reload counselor availability to get latest changes
+            await loadCounselorAvailability();
+
+            // If date is already selected, populate time options
+            const dateInput = document.getElementById('rescheduleDate');
+            if (dateInput && dateInput.value) {
+                try {
+                    await populateRescheduleTimeOptions(dateInput.value);
+                } catch (error) {
+                    showToast('Error', error.message || 'Failed to load available times');
+                }
+            }
+        });
+
+        document.getElementById('rescheduleModal').addEventListener('hidden.bs.modal', function(){
+            // Restore page scrolling
+            document.body.style.overflow = '';
+            document.getElementById('rescheduleDate').value=''; 
+            document.getElementById('rescheduleTime').innerHTML='<option value="">Select available time</option>'; 
+            document.getElementById('rescheduleReason').value=''; 
+            delete this.dataset.appointmentId;
+        });
+
+        document.getElementById('rescheduleModal').addEventListener('hidden.bs.modal', function(){ document.getElementById('rescheduleDate').value=''; document.getElementById('rescheduleTime').innerHTML='<option value="">Select available time</option>'; document.getElementById('rescheduleReason').value=''; delete this.dataset.appointmentId; });
 
         appointmentsTableContainer.classList.remove('d-none');
         emptyMessage.classList.add('d-none');
@@ -238,14 +310,29 @@ document.addEventListener('DOMContentLoaded', function () {
         return `${fh}:${m||'00'} ${ampm}`; 
     }
 
-    function updateAppointmentStatus(appointmentId, newStatus){
-        const buttons = document.querySelectorAll(`.mark-complete-btn[data-id="${appointmentId}"], .cancel-appointment-btn[data-id="${appointmentId}"]`);
+    // Show remarks modal for marking appointment as completed
+    function showRemarksModal(appointmentId) {
+        // Store the appointment ID for later use
+        document.getElementById('remarksModal').dataset.appointmentId = appointmentId;
+
+        // Clear previous remarks
+        document.getElementById('counselorRemarks').value = '';
+
+        // Show the modal
+        new bootstrap.Modal(document.getElementById('remarksModal'), { backdrop: 'static', keyboard: false }).show();
+    }
+
+    function updateAppointmentStatus(appointmentId, newStatus, remarks = ''){
+        const buttons = document.querySelectorAll(`.mark-complete-btn[data-id="${appointmentId}"], .reschedule-appointment-btn[data-id="${appointmentId}"]`);
         buttons.forEach(b=>{ b.disabled=true; b.innerHTML='<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...'; });
         const formData = new FormData(); formData.append('appointment_id', appointmentId); formData.append('status', newStatus);
+        if (remarks) {
+            formData.append('counselor_remarks', remarks);
+        }
         fetch((window.BASE_URL || '/') + 'counselor/appointments/updateAppointmentStatus', { method:'POST', body: formData, credentials:'include', headers:{ 'X-Requested-With':'XMLHttpRequest' }})
             .then(r=>{ if(!r.ok) throw new Error(`Server error: ${r.status}`); return r.json(); })
-            .then(data=>{ if (data.status==='success'){ showToast('Success', `Appointment ${newStatus.toLowerCase()} successfully`); loadAppointments(); } else { showToast('Error', data.message||'Failed to update appointment status'); buttons.forEach(b=>{ b.disabled=false; b.innerHTML = newStatus==='COMPLETED' ? '<i class="fas fa-check me-1"></i>Mark Complete' : '<i class="fas fa-times me-1"></i>Cancel'; }); } })
-            .catch(err=>{ showToast('Error', err.message||'Failed to update appointment status'); buttons.forEach(b=>{ b.disabled=false; b.innerHTML = newStatus==='COMPLETED' ? '<i class="fas fa-check me-1"></i>Mark Complete' : '<i class="fas fa-times me-1"></i>Cancel'; }); });
+                .then(data=>{ if (data.status==='success'){ showToast('Success', `Appointment ${newStatus.toLowerCase()} successfully`); loadAppointments(); } else { showToast('Error', data.message||'Failed to update appointment status'); buttons.forEach(b=>{ b.disabled=false; b.innerHTML = (newStatus || '').toLowerCase()==='completed' ? '<i class="fas fa-check me-1"></i>Mark Complete' : '<i class="fas fa-calendar-alt me-1"></i>Reschedule'; }); } })
+            .catch(err=>{ showToast('Error', err.message||'Failed to update appointment status'); buttons.forEach(b=>{ b.disabled=false; b.innerHTML = (newStatus || '').toLowerCase()==='completed' ? '<i class="fas fa-check me-1"></i>Mark Complete' : '<i class="fas fa-calendar-alt me-1"></i>Reschedule'; }); });
     }
 
     function showToast(title, message){
@@ -299,9 +386,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const dateStr = toYmd(date);
 
             return this.appointments.filter((apt) => {
-                // Count only approved/scheduled items
+                // Count only approved/scheduled/rescheduled items
                 const status = (apt.status || '').toString().toLowerCase();
-                const isApproved = status === 'approved' || status === 'scheduled' || status === 'approved\n';
+                const isApproved = status === 'approved' || status === 'rescheduled' || status === 'scheduled' || status === 'approved\n';
 
                 // Prefer appointed_date; fall back to preferred_date
                 const raw = apt.appointed_date || apt.preferred_date || apt.appointedDate || apt.preferredDate;
@@ -394,6 +481,168 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Helper functions for time handling
+    function getDayNameFromDate(dateValue) {
+        const date = new Date(`${dateValue}T00:00:00`);
+        return date.toLocaleDateString('en-US', { weekday: 'long' });
+    }
+
+    function toMinutes(timeString) {
+        if (!timeString) return null;
+        const match = String(timeString).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        if (!match) return null;
+
+        let hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const meridiem = match[3].toUpperCase();
+
+        if (meridiem === 'PM' && hours !== 12) hours += 12;
+        if (meridiem === 'AM' && hours === 12) hours = 0;
+
+        return (hours * 60) + minutes;
+    }
+
+    function minutesToTime(minutes) {
+        const normalizedMinutes = ((minutes % (24 * 60)) + (24 * 60)) % (24 * 60);
+        const hour24 = Math.floor(normalizedMinutes / 60);
+        const minute = normalizedMinutes % 60;
+        const suffix = hour24 >= 12 ? 'PM' : 'AM';
+        const hour12 = hour24 % 12 || 12;
+        return `${hour12}:${String(minute).padStart(2, '0')} ${suffix}`;
+    }
+
+    function formatTimeRangeLabel(startTime, endTime) {
+        return `${startTime} - ${endTime}`;
+    }
+
+    function getAvailabilitySlotsForDate(dateValue) {
+        const dayName = getDayNameFromDate(dateValue);
+        return Array.isArray(counselorAvailability[dayName]) ? counselorAvailability[dayName] : [];
+    }
+
+    async function loadBookedTimes(dateValue) {
+        const params = new URLSearchParams({
+            date: dateValue
+        });
+
+        const response = await fetch((window.BASE_URL || '/') + `counselor/follow-up/booked-times?${params.toString()}`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        if (!response.ok) throw new Error('Failed to load booked times');
+
+        const data = await response.json();
+        if (data.status !== 'success') throw new Error(data.message || 'Failed to load booked times');
+
+        return Array.isArray(data.booked) ? data.booked : [];
+    }
+
+    async function populateRescheduleTimeOptions(dateValue) {
+        const timeSelect = document.getElementById('rescheduleTime');
+        if (!timeSelect) return;
+
+        timeSelect.innerHTML = '<option value="">Select available time</option>';
+
+        if (!dateValue) return;
+
+        console.log('Populating time options for date:', dateValue);
+
+        let slots = getAvailabilitySlotsForDate(dateValue)
+            .map(slot => slot?.time_scheduled)
+            .filter(Boolean);
+
+        console.log('Slots for day:', slots);
+
+        console.log('Available slots:', slots);
+
+        // For now, skip booked times check to show available slots
+        // const bookedTimes = await loadBookedTimes(dateValue);
+        // console.log('Booked times:', bookedTimes);
+
+        // Get current appointment time to allow rescheduling to same time
+        const modal = document.getElementById('rescheduleModal');
+        const appointmentId = modal ? modal.dataset.appointmentId : null;
+        const currentAppointment = appointmentId ? originalAppointments.find(app => app.id == appointmentId) : null;
+        const currentTime = currentAppointment?.time || currentAppointment?.preferred_time || '';
+
+        console.log('Current appointment time:', currentTime);
+
+        const availableTimeRanges = [];
+
+        slots.forEach(slot => {
+            const parts = String(slot).split('-').map(part => part.trim());
+            if (parts.length !== 2) return;
+
+            const start = parts[0];
+            const end = parts[1];
+            const startMinutes = toMinutes(start);
+            const endMinutes = toMinutes(end);
+
+            if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes) {
+                return;
+            }
+
+            for (let minutes = startMinutes; minutes < endMinutes; minutes += 30) {
+                const nextMinutes = minutes + 30;
+                if (nextMinutes > endMinutes) {
+                    break;
+                }
+
+                const generatedStartTime = minutesToTime(minutes);
+                const generatedEndTime = minutesToTime(nextMinutes);
+
+                // For now, include all generated times
+                availableTimeRanges.push({
+                    value: generatedStartTime,
+                    label: formatTimeRangeLabel(generatedStartTime, generatedEndTime)
+                });
+            }
+        });
+
+        // Include current appointment time if not already in options
+        if (currentTime && !availableTimeRanges.some(r => r.value === currentTime)) {
+            // Find a suitable end time (assume 30 min later)
+            const currentMinutes = toMinutes(currentTime);
+            if (currentMinutes !== null) {
+                const endTime = minutesToTime(currentMinutes + 30);
+                availableTimeRanges.push({
+                    value: currentTime,
+                    label: formatTimeRangeLabel(currentTime, endTime)
+                });
+            }
+        }
+
+        console.log('Available time ranges:', availableTimeRanges);
+        availableTimeRanges.forEach(range => {
+            const option = document.createElement('option');
+            option.value = range.value;
+            option.textContent = range.label;
+            timeSelect.appendChild(option);
+        });
+    }
+
+    async function loadCounselorAvailability() {
+        try {
+            const response = await fetch((window.BASE_URL || '/') + 'counselor/profile/availability', {
+                method: 'GET',
+                credentials: 'include',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            if (!response.ok) throw new Error('Failed to load counselor availability');
+
+            const data = await response.json();
+            if (!data.success) throw new Error(data.message || 'Failed to load counselor availability');
+
+            counselorAvailability = data.availability || {};
+            console.log('Counselor availability loaded:', counselorAvailability);
+        } catch (error) {
+            console.error('Error loading counselor availability:', error);
+        }
+    }
+
     /**
      * Load counselor's availability schedule and display it in the sidebar
      */
@@ -422,6 +671,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(data => {
             if (data.status === 'success') {
+                counselorAvailability = data.schedule || {};
                 displayCounselorSchedule(data.schedule);
             } else {
                 console.error('Failed to load counselor schedule:', data.message);
